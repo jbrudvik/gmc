@@ -1,2 +1,3 @@
 # go-mod-create
-Creates a new Go module directory
+
+Creates a new Go module
