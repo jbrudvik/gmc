@@ -30,7 +30,7 @@ func App() *cli.App {
 		Flags: []cli.Flag{
 			&cli.BoolFlag{
 				Name:    "nova",
-				Usage:   "Includes Panic Nova project config",
+				Usage:   "include Nova configuration",
 				Aliases: []string{"n"},
 			},
 		},
