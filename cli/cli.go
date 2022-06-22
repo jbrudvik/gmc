@@ -14,6 +14,8 @@ import (
 
 const Version string = "v0.0.1"
 
+// TODO: Move this to separate module along with CreateModule function
+// TODO: Change this glob so assets is automatically the top level? all:assets/* ?
 //go:embed all:assets
 var assets embed.FS
 
@@ -25,6 +27,13 @@ func App() *cli.App {
 		Version:         Version,
 		HideHelpCommand: true,
 		ArgsUsage:       "[module]",
+		Flags: []cli.Flag{
+			&cli.BoolFlag{
+				Name:    "nova",
+				Usage:   "Includes Panic Nova project config",
+				Aliases: []string{"n"},
+			},
+		},
 		Action: func(c *cli.Context) error {
 			args := c.Args()
 			if args.Len() < 1 {
@@ -37,7 +46,15 @@ func App() *cli.App {
 			} else {
 				module := args.First()
 				fmt.Printf("Creating module \"%s\"...\n", module)
-				err := CreateModule(module)
+
+				// TODO: Add showing nova (and other) options to above? So it's clear
+				extraDirs := []string{} // TODO: Use make instead? Google it.
+				if c.Bool("nova") {
+					extraDirs = append(extraDirs, "nova")
+				}
+
+				err := CreateModule(module, extraDirs)
+
 				if err != nil {
 					errorMessage := fmt.Sprintf("Failed to create module \"%s\": %s", module, err)
 					return cli.Exit(errorMessage, 1)
@@ -49,8 +66,9 @@ func App() *cli.App {
 	}
 }
 
+// TODO: Is extras idiomatic? Do it the right way
 // TODO: Factor this out to a separate module. Then test it well.
-func CreateModule(module string) error {
+func CreateModule(module string, extraDirs []string) error {
 	moduleBase := path.Base(module)
 
 	// Create module directory && change into the directory
@@ -75,10 +93,21 @@ func CreateModule(module string) error {
 		return err
 	}
 
+	// TODO: Extract constants:
+	// - "default"
+
 	// Copy over assets
-	err = CopyEmbeddedFS(assets, ".")
+	err = CopyEmbeddedFS(assets, "default")
 	if err != nil {
 		return err
+	}
+
+	// Copy over extras
+	for _, extraDir := range extraDirs {
+		err = CopyEmbeddedFS(assets, extraDir)
+		if err != nil {
+			return err
+		}
 	}
 
 	return nil
@@ -87,20 +116,21 @@ func CreateModule(module string) error {
 // TODO: Factor out to own package + Unit test
 // - Q: Can test code use its own embed? That's probably the right way to do this.
 //     - Especially if we can write to an in-memory FS (to watch that its done correctly)
-func CopyEmbeddedFS(srcFS embed.FS, dst string) error {
-	// TODO: This more robustly, especially the final line (multiple files? empty? ...)
+func CopyEmbeddedFS(srcFS embed.FS, src string) error {
 	entries, err := srcFS.ReadDir(".")
 	if err != nil {
 		return err
 	}
-	dir := entries[0]
-
+	dir := entries[0] // The `assets` dir // TODO: Q: Should this be a constant?
 	root := dir.Name()
+	root = path.Join(root, src)
+
 	err = fs.WalkDir(srcFS, root, func(srcPath string, entry fs.DirEntry, err error) error {
 		if err != nil {
 			return err
 		}
 
+		// TODO: This really can't be right. Right? We should just be walking a level lower... right?
 		// TODO: This more slickly
 		dstPath := strings.TrimPrefix(srcPath, root)
 		if dstPath == "" {
@@ -109,13 +139,13 @@ func CopyEmbeddedFS(srcFS embed.FS, dst string) error {
 		dstPath = strings.TrimPrefix(dstPath, "/")
 
 		if entry.IsDir() {
-			// Create the dir
-			err = os.Mkdir(path.Join(dst, dstPath), 0755)
+			// Create dir
+			err = os.Mkdir(path.Join(".", dstPath), 0755)
 			if err != nil {
 				return err
 			}
 		} else {
-			// Copy the file
+			// Copy file
 			fileBytes, err := fs.ReadFile(srcFS, srcPath)
 			if err != nil {
 				return err
