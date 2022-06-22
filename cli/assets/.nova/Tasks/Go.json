@@ -1,0 +1,17 @@
+{
+  "actions": {
+    "build": {
+      "enabled": true,
+      "script": "go build && go test ./..."
+    },
+    "clean": {
+      "enabled": true,
+      "script": "go clean"
+    },
+    "run": {
+      "enabled": true,
+      "script": "go run ."
+    }
+  },
+  "openLogOnRun": "start"
+}
