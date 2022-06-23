@@ -14,10 +14,10 @@ import (
 
 const Version string = "v0.0.1"
 
-// TODO: Move this to separate module along with CreateModule function
-// TODO: Change this glob so assets is automatically the top level? all:assets/* ?
 //go:embed all:assets
 var assets embed.FS
+
+const assetsDefaultDir string = "default"
 
 func App() *cli.App {
 	return &cli.App{
@@ -93,18 +93,15 @@ func CreateModule(module string, extraDirs []string) error {
 		return err
 	}
 
-	// TODO: Extract constants:
-	// - "default"
-
 	// Copy over assets
-	err = CopyEmbeddedFS(assets, "default")
+	err = copyEmbeddedFS(assets, assetsDefaultDir)
 	if err != nil {
 		return err
 	}
 
 	// Copy over extras
 	for _, extraDir := range extraDirs {
-		err = CopyEmbeddedFS(assets, extraDir)
+		err = copyEmbeddedFS(assets, extraDir)
 		if err != nil {
 			return err
 		}
@@ -116,7 +113,7 @@ func CreateModule(module string, extraDirs []string) error {
 // TODO: Factor out to own package + Unit test
 // - Q: Can test code use its own embed? That's probably the right way to do this.
 //     - Especially if we can write to an in-memory FS (to watch that its done correctly)
-func CopyEmbeddedFS(srcFS embed.FS, src string) error {
+func copyEmbeddedFS(srcFS embed.FS, src string) error {
 	entries, err := srcFS.ReadDir(".")
 	if err != nil {
 		return err
