@@ -1,6 +1,6 @@
 # gmc (Go mod create)
 
-`gmc` is a CLI that creates a Go module starting point.
+`gmc` (Go mod create) is a CLI that creates a Go module starting point.
 
 ## Usage
 
