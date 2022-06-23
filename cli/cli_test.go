@@ -2,7 +2,7 @@ package cli_test
 
 import (
 	"testing"
-	// "github.com/jbrudvik/go-mod-create/cli"
+	// "github.com/jbrudvik/gmc/cli"
 )
 
 func TestCreate(t *testing.T) {

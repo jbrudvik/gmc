@@ -4,7 +4,7 @@ import (
 	"log"
 	"os"
 
-	"github.com/jbrudvik/go-mod-create/cli"
+	"github.com/jbrudvik/gmc/cli"
 )
 
 func main() {

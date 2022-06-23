@@ -1,4 +1,4 @@
-module github.com/jbrudvik/go-mod-create
+module github.com/jbrudvik/gmc
 
 go 1.18
 
