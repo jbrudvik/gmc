@@ -1,4 +1,4 @@
-# gmc: Go mod create
+# gmc (Go mod create)
 
 `gmc` is a CLI that creates a Go module starting point.
 
