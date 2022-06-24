@@ -1,6 +1,6 @@
 # gmc (Go mod create)
 
-`gmc` (Go mod create) creates Go modules.
+`gmc` (Go mod create) is a CLI that creates Go modules.
 
 ## Usage
 
