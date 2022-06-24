@@ -1,6 +1,6 @@
 # gmc (Go mod create)
 
-`gmc` (Go mod create) is a CLI that creates a Go module starting point.
+`gmc` (Go mod create) creates Go modules.
 
 ## Usage
 
@@ -8,7 +8,7 @@
 $ gmc
 
 NAME:
-   gmc - (Go mod create) Creates a Go module starting point
+   gmc - (Go mod create) creates Go modules
 
 USAGE:
    gmc [global options] [module name]
@@ -17,13 +17,13 @@ VERSION:
    v0.0.1
 
 DESCRIPTION:
-   gmc creates a directory containing:
+   gmc [module name] creates a directory containing:
    - go.mod            Go module metadata
    - .gitignore        ignores your module's binary
-   - main.go           a starting place for your module's code
+   - main.go           your module's first code
    - .nova (Optional)  Nova editor configuration
 
-   This new directory can be immediately built/run/installed using the go CLI.
+   This directory can be immediately built/run/installed using the `go` CLI.
 
    More information: https://github.com/jbrudvik/gmc
 

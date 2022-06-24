@@ -22,14 +22,14 @@ const assetsDefaultDir string = "default"
 func App() *cli.App {
 	return &cli.App{
 		Name:  "gmc",
-		Usage: "(Go mod create) Creates a Go module starting point",
-		Description: "gmc creates a directory containing:\n" +
+		Usage: "(Go mod create) creates Go modules",
+		Description: "gmc [module name] creates a directory containing:\n" +
 			"- go.mod            Go module metadata\n" +
 			"- .gitignore        ignores your module's binary\n" +
-			"- main.go           a starting place for your module's code\n" +
+			"- main.go           your module's first code\n" +
 			"- .nova (Optional)  Nova editor configuration\n" +
 			"\n" +
-			"This new directory can be immediately built/run/installed using the go CLI.\n" +
+			"This directory can be immediately built/run/installed using the `go` CLI.\n" +
 			"\n" +
 			"More information: https://github.com/jbrudvik/gmc\n" +
 			"",
