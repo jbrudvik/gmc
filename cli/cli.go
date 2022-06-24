@@ -2,7 +2,9 @@ package cli
 
 import (
 	"embed"
+	"errors"
 	"fmt"
+	"io"
 	"io/fs"
 	"os"
 	"os/exec"
@@ -20,7 +22,33 @@ var assets embed.FS
 const assetsDefaultDir string = "default"
 
 func App() *cli.App {
+	return AppWithCustomOutput(os.Stdout, os.Stderr)
+}
+
+func AppWithCustomOutput(output io.Writer, errorOutput io.Writer) *cli.App {
+	exitCodeHandler := func(exitCode int) {
+		os.Exit(exitCode)
+	}
+	return AppWithCustomOutputAndExit(os.Stdout, os.Stderr, exitCodeHandler)
+}
+
+func AppWithCustomOutputAndExit(output io.Writer, errorOutput io.Writer, exitCodeHandler func(int)) *cli.App {
 	return &cli.App{
+		Writer:    output,
+		ErrWriter: errorOutput,
+		ExitErrHandler: func(c *cli.Context, err error) {
+			if err != nil {
+				errorMessage := fmt.Sprintf("%s\n\n", err)
+				fmt.Fprint(c.App.ErrWriter, errorMessage)
+				cli.ShowAppHelp(c)
+				exitCodeHandler(1)
+			} else {
+				exitCodeHandler(0)
+			}
+		},
+		OnUsageError: func(c *cli.Context, err error, isSubcommand bool) error {
+			return errors.New("Error: Unknown flag")
+		},
 		Name:  "gmc",
 		Usage: "(Go mod create) creates Go modules",
 		Description: "gmc [module name] creates a directory containing:\n" +
@@ -33,7 +61,6 @@ func App() *cli.App {
 			"\n" +
 			"More information: https://github.com/jbrudvik/gmc\n" +
 			"",
-
 		Version:         Version,
 		HideHelpCommand: true,
 		ArgsUsage:       "[module name]",
@@ -47,12 +74,12 @@ func App() *cli.App {
 		Action: func(c *cli.Context) error {
 			args := c.Args()
 			if args.Len() < 1 {
-				cli.ShowAppHelpAndExit(c, 0)
-				return nil
+				errorMessage := fmt.Sprintf("Error: Module name is required")
+				return errors.New(errorMessage)
 			} else if args.Len() > 1 {
-				fmt.Fprintf(os.Stderr, "Error: Only one module name is allowed\n\n")
-				cli.ShowAppHelpAndExit(c, 1)
-				return nil
+				// TODO: Control showing help or not? Or just do it all the time?
+				errorMessage := fmt.Sprintf("Error: Only one module name is allowed")
+				return errors.New(errorMessage)
 			} else {
 				module := args.First()
 				fmt.Printf("Creating module \"%s\"...\n", module)
@@ -63,7 +90,7 @@ func App() *cli.App {
 					extraDirs = append(extraDirs, "nova")
 				}
 
-				err := CreateModule(module, extraDirs)
+				err := createModule(module, extraDirs)
 
 				if err != nil {
 					errorMessage := fmt.Sprintf("Failed to create module \"%s\": %s", module, err)
@@ -76,9 +103,8 @@ func App() *cli.App {
 	}
 }
 
-// TODO: Is extras idiomatic? Do it the right way
-// TODO: Factor this out to a separate module. Then test it well.
-func CreateModule(module string, extraDirs []string) error {
+// TODO: Is `extras` idiomatic? Do it the right way
+func createModule(module string, extraDirs []string) error {
 	moduleBase := path.Base(module)
 
 	// Create module directory && change into the directory
@@ -120,7 +146,6 @@ func CreateModule(module string, extraDirs []string) error {
 	return nil
 }
 
-// TODO: Factor out to own package + Unit test
 // - Q: Can test code use its own embed? That's probably the right way to do this.
 //     - Especially if we can write to an in-memory FS (to watch that its done correctly)
 func copyEmbeddedFS(srcFS embed.FS, src string) error {
