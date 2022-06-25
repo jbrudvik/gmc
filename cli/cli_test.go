@@ -3,6 +3,8 @@ package cli_test
 import (
 	"bytes"
 	"fmt"
+	"os"
+	"path"
 	"strconv"
 	"testing"
 
@@ -36,16 +38,46 @@ const helpOutput string = "NAME:\n" +
 
 var versionOutput string = fmt.Sprintf("gmc version %s\n", cli.Version)
 
+const mainGoContents string = "package main\n" +
+	"\n" +
+	"import (\n" +
+	"	\"fmt\"\n" +
+	")\n" +
+	"\n" +
+	"func main() {\n" +
+	"	fmt.Println(\"hello!\")\n" +
+	"}\n"
+
+const novaTaskContents string = `{
+  "actions": {
+    "build": {
+      "enabled": true,
+      "script": "go build && go test ./..."
+    },
+    "clean": {
+      "enabled": true,
+      "script": "go clean"
+    },
+    "run": {
+      "enabled": true,
+      "script": "go run ."
+    }
+  },
+  "openLogOnRun": "start"
+}
+`
+
 const errorMessageUnknownFlag string = "Error: Unknown flag\n\n"
 const errorMessageModuleNameRequired string = "Error: Module name is required\n\n"
 const errorMessageTooManyModuleNames string = "Error: Only one module name is allowed\n\n"
 
-// TODO: If I need my test helpers, consider just open-sourcing them in a separate repo
-// - However, make the stack traces work before I do that
+type file struct {
+	path    string
+	content *string // nil -> directory
+}
 
-// TODO: Consider adding in test title to test cases -- so failures are clearer
-// ...or just creating dynamically from the inputs?
-// - If I like this approach, do the same with Neat.
+// TODO: Figure out how to ensure there aren't extra files -- maybe just count the tree somehow?
+// TODO: Should we look for any other characteristics?
 
 func TestRun(t *testing.T) {
 	tests := []struct {
@@ -53,74 +85,167 @@ func TestRun(t *testing.T) {
 		expectedOutput      string
 		expectedErrorOutput string
 		expectedExitCode    int
-		// TODO: Add expected fs -- however I can express it
-		// - Maybe just via actual test files? Or maybe keep it in memory...
+		expectedFiles       []file
 	}{
 		{
 			[]string{"-h"},
 			helpOutput,
 			"",
 			0,
+			nil,
 		},
 		{
 			[]string{"--help"},
 			helpOutput,
 			"",
 			0,
+			nil,
 		},
 		{
 			[]string{"-v"},
 			versionOutput,
 			"",
 			0,
+			nil,
 		},
 		{
 			[]string{"--version"},
 			versionOutput,
 			"",
 			0,
+			nil,
 		},
 		{
 			[]string{},
 			helpOutput,
 			errorMessageModuleNameRequired,
 			1,
+			nil,
 		},
 		{
 			[]string{"-e"},
 			helpOutput,
 			errorMessageUnknownFlag,
 			1,
+			nil,
+		},
+		{
+			[]string{"-e", "a1"},
+			helpOutput,
+			errorMessageUnknownFlag,
+			1,
+			nil,
 		},
 		{
 			[]string{"-n"},
 			helpOutput,
 			errorMessageModuleNameRequired,
 			1,
+			nil,
 		},
 		{
 			[]string{"--nova"},
 			helpOutput,
 			errorMessageModuleNameRequired,
 			1,
+			nil,
 		},
 		{
 			[]string{"a1", "a2"},
 			helpOutput,
 			errorMessageTooManyModuleNames,
 			1,
+			nil,
 		},
 		{
 			[]string{"a1"},
 			"",
 			"",
 			0,
+			[]file{
+				{"a1", nil},
+				{"a1/go.mod", ptr("module a1\n\ngo 1.18\n")},
+				{"a1/.gitignore", ptr("a1")},
+				{"a1/main.go", ptr(mainGoContents)},
+			},
 		},
-		// TODO: Add
-		// - --nova a1
-		// - example.com/foo/bar
-		// - --nova example.com/foo/bar
+		{
+			[]string{"-n", "a2"},
+			"",
+			"",
+			0,
+			[]file{
+				{"a2", nil},
+				{"a2/go.mod", ptr("module a2\n\ngo 1.18\n")},
+				{"a2/.gitignore", ptr("a2")},
+				{"a2/main.go", ptr(mainGoContents)},
+				{"a2/.nova", nil},
+				{"a2/.nova/Tasks", nil},
+				{"a2/.nova/Tasks/Go.json", ptr(novaTaskContents)},
+			},
+		},
+		{
+			[]string{"--nova", "a3"},
+			"",
+			"",
+			0,
+			[]file{
+				{"a3", nil},
+				{"a3/go.mod", ptr("module a3\n\ngo 1.18\n")},
+				{"a3/.gitignore", ptr("a3")},
+				{"a3/main.go", ptr(mainGoContents)},
+				{"a3/.nova", nil},
+				{"a3/.nova/Tasks", nil},
+				{"a3/.nova/Tasks/Go.json", ptr(novaTaskContents)},
+			},
+		},
+		{
+			[]string{"example.com/foo"},
+			"",
+			"",
+			0,
+			[]file{
+				{"foo", nil},
+				{"foo/go.mod", ptr("module example.com/foo\n\ngo 1.18\n")},
+				{"foo/.gitignore", ptr("foo")},
+				{"foo/main.go", ptr(mainGoContents)},
+			},
+		},
+		{
+			[]string{"--nova", "example.com/foo/bar"},
+			"",
+			"",
+			0,
+			[]file{
+				{"bar", nil},
+				{"bar/go.mod", ptr("module example.com/foo/bar\n\ngo 1.18\n")},
+				{"bar/.gitignore", ptr("bar")},
+				{"bar/main.go", ptr(mainGoContents)},
+				{"bar/.nova", nil},
+				{"bar/.nova/Tasks", nil},
+				{"bar/.nova/Tasks/Go.json", ptr(novaTaskContents)},
+			},
+		},
+		{
+			[]string{"-n", "example.com/foo/bar/baz"},
+			"",
+			"",
+			0,
+			[]file{
+				{"baz", nil},
+				{"baz/go.mod", ptr("module example.com/foo/bar/baz\n\ngo 1.18\n")},
+				{"baz/.gitignore", ptr("baz")},
+				{"baz/main.go", ptr(mainGoContents)},
+				{"baz/.nova", nil},
+				{"baz/.nova/Tasks", nil},
+				{"baz/.nova/Tasks/Go.json", ptr(novaTaskContents)},
+			},
+		},
 	}
+
+	// setUpTestDir(t)
+	testDir := setUpTestDir(t)
+	defer tearDownTestDir(t, testDir)
 
 	for _, tc := range tests {
 		input := fmt.Sprintf("%s", tc.args)
@@ -144,6 +269,70 @@ func TestRun(t *testing.T) {
 		if actualErrorOutput != tc.expectedErrorOutput {
 			t.Error(testCaseUnexpectedMessage(input, "error output", tc.expectedErrorOutput, actualErrorOutput))
 		}
+
+		cwd, err := os.Getwd()
+		if err != nil {
+			t.Error("Could not get cwd", err)
+		}
+		for _, f := range tc.expectedFiles {
+			absolutePath := path.Join(cwd, f.path)
+
+			// TODO: Ensure there aren't extra files in actual
+
+			// TODO: Do a check to see if the file exists at all?
+
+			if f.content != nil {
+				bytes, err := os.ReadFile(absolutePath)
+				if err != nil {
+					errorMessage := fmt.Sprintf("Test with input %s: Unable to read expected file: %s:\n", input, absolutePath)
+					t.Error(errorMessage)
+				} else {
+					expectedFileContent := *f.content
+					actualFileContent := string(bytes)
+					if expectedFileContent != actualFileContent {
+						errorMessage := testCaseUnexpectedMessage(input, fmt.Sprintf("file content at path: %s", f.path), expectedFileContent, actualFileContent)
+						t.Error(errorMessage)
+					}
+				}
+			} else {
+				// TODO: Compare dir
+				entries, err := os.ReadDir(absolutePath)
+				if err != nil {
+					errorMessage := fmt.Sprintf("Test with input %s: Unable to read expected file: %s:\n", input, absolutePath)
+					t.Error(errorMessage)
+				} else {
+					// TODO: Actually look at the properties / contents of the directory
+					fmt.Println(entries)
+					// for _, entry := range entries {
+					// 	entry.Name()
+					// }
+					// t.Error()
+				}
+			}
+		}
+	}
+}
+
+func setUpTestDir(t *testing.T) string {
+	testDir, err := os.MkdirTemp(".", "cli_test_dir")
+	if err != nil {
+		t.Error("Failure during test setup:", err)
+	}
+	err = os.Chdir(testDir)
+	if err != nil {
+		t.Error("Failure during test setup:", err)
+	}
+	return testDir
+}
+
+func tearDownTestDir(t *testing.T, testDir string) {
+	err := os.Chdir("..")
+	if err != nil {
+		t.Error("Failure during test teardown:", err)
+	}
+	err = os.RemoveAll(testDir)
+	if err != nil {
+		t.Error("Failure during test teardown:", err)
 	}
 }
 
@@ -151,4 +340,8 @@ func TestRun(t *testing.T) {
 // TODO: Rename `thing`
 func testCaseUnexpectedMessage(input string, thing string, expected string, actual string) string {
 	return fmt.Sprintf("Test with input %s: Unexpected %s\nExpected: %s\nActual  : %s\n", input, thing, expected, actual)
+}
+
+func ptr[T any](a T) *T {
+	return &a
 }
