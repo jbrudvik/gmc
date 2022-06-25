@@ -53,6 +53,8 @@ func TestRun(t *testing.T) {
 		expectedOutput      string
 		expectedErrorOutput string
 		expectedExitCode    int
+		// TODO: Add expected fs -- however I can express it
+		// - Maybe just via actual test files? Or maybe keep it in memory...
 	}{
 		{
 			[]string{"-h"},
@@ -73,7 +75,7 @@ func TestRun(t *testing.T) {
 			0,
 		},
 		{
-			[]string{"--vesion"},
+			[]string{"--version"},
 			versionOutput,
 			"",
 			0,
@@ -108,8 +110,13 @@ func TestRun(t *testing.T) {
 			errorMessageTooManyModuleNames,
 			1,
 		},
+		{
+			[]string{"a1"},
+			"",
+			"",
+			0,
+		},
 		// TODO: Add
-		// - a1
 		// - --nova a1
 		// - example.com/foo/bar
 		// - --nova example.com/foo/bar
@@ -122,7 +129,7 @@ func TestRun(t *testing.T) {
 		var errorOutputBuffer bytes.Buffer
 		exitCodeHandler := func(exitCode int) {
 			if tc.expectedExitCode != exitCode {
-				t.Errorf(testCaseFailureMessage(input, "exit code", strconv.Itoa(tc.expectedExitCode), strconv.Itoa(exitCode)))
+				t.Errorf(testCaseUnexpectedMessage(input, "exit code", strconv.Itoa(tc.expectedExitCode), strconv.Itoa(exitCode)))
 			}
 		}
 
@@ -132,15 +139,16 @@ func TestRun(t *testing.T) {
 		actualOutput := outputBuffer.String()
 		actualErrorOutput := errorOutputBuffer.String()
 		if actualOutput != tc.expectedOutput {
-			t.Error(testCaseFailureMessage(input, "output", tc.expectedOutput, actualOutput))
+			t.Error(testCaseUnexpectedMessage(input, "output", tc.expectedOutput, actualOutput))
 		}
 		if actualErrorOutput != tc.expectedErrorOutput {
-			t.Error(testCaseFailureMessage(input, "error output", tc.expectedErrorOutput, actualErrorOutput))
+			t.Error(testCaseUnexpectedMessage(input, "error output", tc.expectedErrorOutput, actualErrorOutput))
 		}
 	}
 }
 
-// TODO: Rename `what` parameter
-func testCaseFailureMessage(input string, what string, expected string, actual string) string {
-	return fmt.Sprintf("Test with input %s: Unexpected error output\nExpected: %s\nActual  : %s\n", input, expected, actual)
+// TODO: Rename this method -- maybe do really factor out for my assert library
+// TODO: Rename `thing`
+func testCaseUnexpectedMessage(input string, thing string, expected string, actual string) string {
+	return fmt.Sprintf("Test with input %s: Unexpected %s\nExpected: %s\nActual  : %s\n", input, thing, expected, actual)
 }
