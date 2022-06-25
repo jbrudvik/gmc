@@ -2,16 +2,25 @@ package cli_test
 
 import (
 	"bytes"
+	"errors"
 	"fmt"
+	"io/fs"
 	"os"
 	"path"
-	"strconv"
 	"testing"
 
 	"github.com/jbrudvik/gmc/cli"
 )
 
-// TODO: Should I change all of these constants to []byte?
+type file struct {
+	path    string
+	content []byte // Non-nil -> file, nil -> directory
+	perm    fs.FileMode
+}
+
+const dirPerms fs.FileMode = 0755 | fs.ModeDir
+const filePerms fs.FileMode = 0644
+
 const helpOutput string = "NAME:\n" +
 	"   gmc - (Go mod create) creates Go modules\n" +
 	"\n" +
@@ -71,16 +80,6 @@ const novaTaskContents string = `{
 const errorMessageUnknownFlag string = "Error: Unknown flag\n\n"
 const errorMessageModuleNameRequired string = "Error: Module name is required\n\n"
 const errorMessageTooManyModuleNames string = "Error: Only one module name is allowed\n\n"
-
-type file struct {
-	path string
-
-	// Non-nil -> file, nil -> directory
-	content []byte
-}
-
-// TODO: Figure out how to ensure there aren't extra files -- maybe just count the tree somehow?
-// TODO: Should we look for any other characteristics?
 
 func TestRun(t *testing.T) {
 	tests := []struct {
@@ -166,10 +165,10 @@ func TestRun(t *testing.T) {
 			"",
 			0,
 			[]file{
-				{"a1", nil},
-				{"a1/go.mod", []byte("module a1\n\ngo 1.18\n")},
-				{"a1/.gitignore", []byte("a1")},
-				{"a1/main.go", []byte(mainGoContents)},
+				{"a1", nil, dirPerms},
+				{"a1/go.mod", []byte("module a1\n\ngo 1.18\n"), filePerms},
+				{"a1/.gitignore", []byte("a1"), filePerms},
+				{"a1/main.go", []byte(mainGoContents), filePerms},
 			},
 		},
 		{
@@ -178,13 +177,13 @@ func TestRun(t *testing.T) {
 			"",
 			0,
 			[]file{
-				{"a2", nil},
-				{"a2/go.mod", []byte("module a2\n\ngo 1.18\n")},
-				{"a2/.gitignore", []byte("a2")},
-				{"a2/main.go", []byte(mainGoContents)},
-				{"a2/.nova", nil},
-				{"a2/.nova/Tasks", nil},
-				{"a2/.nova/Tasks/Go.json", []byte(novaTaskContents)},
+				{"a2", nil, dirPerms},
+				{"a2/go.mod", []byte("module a2\n\ngo 1.18\n"), filePerms},
+				{"a2/.gitignore", []byte("a2"), filePerms},
+				{"a2/main.go", []byte(mainGoContents), filePerms},
+				{"a2/.nova", nil, dirPerms},
+				{"a2/.nova/Tasks", nil, dirPerms},
+				{"a2/.nova/Tasks/Go.json", []byte(novaTaskContents), filePerms},
 			},
 		},
 		{
@@ -193,13 +192,13 @@ func TestRun(t *testing.T) {
 			"",
 			0,
 			[]file{
-				{"a3", nil},
-				{"a3/go.mod", []byte("module a3\n\ngo 1.18\n")},
-				{"a3/.gitignore", []byte("a3")},
-				{"a3/main.go", []byte(mainGoContents)},
-				{"a3/.nova", nil},
-				{"a3/.nova/Tasks", nil},
-				{"a3/.nova/Tasks/Go.json", []byte(novaTaskContents)},
+				{"a3", nil, dirPerms},
+				{"a3/go.mod", []byte("module a3\n\ngo 1.18\n"), filePerms},
+				{"a3/.gitignore", []byte("a3"), filePerms},
+				{"a3/main.go", []byte(mainGoContents), filePerms},
+				{"a3/.nova", nil, dirPerms},
+				{"a3/.nova/Tasks", nil, dirPerms},
+				{"a3/.nova/Tasks/Go.json", []byte(novaTaskContents), filePerms},
 			},
 		},
 		{
@@ -208,10 +207,10 @@ func TestRun(t *testing.T) {
 			"",
 			0,
 			[]file{
-				{"foo", nil},
-				{"foo/go.mod", []byte("module example.com/foo\n\ngo 1.18\n")},
-				{"foo/.gitignore", []byte("foo")},
-				{"foo/main.go", []byte(mainGoContents)},
+				{"foo", nil, dirPerms},
+				{"foo/go.mod", []byte("module example.com/foo\n\ngo 1.18\n"), filePerms},
+				{"foo/.gitignore", []byte("foo"), filePerms},
+				{"foo/main.go", []byte(mainGoContents), filePerms},
 			},
 		},
 		{
@@ -220,13 +219,13 @@ func TestRun(t *testing.T) {
 			"",
 			0,
 			[]file{
-				{"bar", nil},
-				{"bar/go.mod", []byte("module example.com/foo/bar\n\ngo 1.18\n")},
-				{"bar/.gitignore", []byte("bar")},
-				{"bar/main.go", []byte(mainGoContents)},
-				{"bar/.nova", nil},
-				{"bar/.nova/Tasks", nil},
-				{"bar/.nova/Tasks/Go.json", []byte(novaTaskContents)},
+				{"bar", nil, dirPerms},
+				{"bar/go.mod", []byte("module example.com/foo/bar\n\ngo 1.18\n"), filePerms},
+				{"bar/.gitignore", []byte("bar"), filePerms},
+				{"bar/main.go", []byte(mainGoContents), filePerms},
+				{"bar/.nova", nil, dirPerms},
+				{"bar/.nova/Tasks", nil, dirPerms},
+				{"bar/.nova/Tasks/Go.json", []byte(novaTaskContents), filePerms},
 			},
 		},
 		{
@@ -235,18 +234,17 @@ func TestRun(t *testing.T) {
 			"",
 			0,
 			[]file{
-				{"baz", nil},
-				{"baz/go.mod", []byte("module example.com/foo/bar/baz\n\ngo 1.18\n")},
-				{"baz/.gitignore", []byte("baz")},
-				{"baz/main.go", []byte(mainGoContents)},
-				{"baz/.nova", nil},
-				{"baz/.nova/Tasks", nil},
-				{"baz/.nova/Tasks/Go.json", []byte(novaTaskContents)},
+				{"baz", nil, dirPerms},
+				{"baz/go.mod", []byte("module example.com/foo/bar/baz\n\ngo 1.18\n"), filePerms},
+				{"baz/.gitignore", []byte("baz"), filePerms},
+				{"baz/main.go", []byte(mainGoContents), filePerms},
+				{"baz/.nova", nil, dirPerms},
+				{"baz/.nova/Tasks", nil, dirPerms},
+				{"baz/.nova/Tasks/Go.json", []byte(novaTaskContents), filePerms},
 			},
 		},
 	}
 
-	// setUpTestDir(t)
 	testDir := setUpTestDir(t)
 	defer tearDownTestDir(t, testDir)
 
@@ -257,7 +255,7 @@ func TestRun(t *testing.T) {
 		var errorOutputBuffer bytes.Buffer
 		exitCodeHandler := func(exitCode int) {
 			if tc.expectedExitCode != exitCode {
-				t.Errorf(testCaseUnexpectedMessage(input, "exit code", strconv.Itoa(tc.expectedExitCode), strconv.Itoa(exitCode)))
+				t.Errorf(testCaseUnexpectedMessage(input, "exit code", tc.expectedExitCode, exitCode))
 			}
 		}
 
@@ -278,39 +276,12 @@ func TestRun(t *testing.T) {
 			t.Error("Could not get cwd", err)
 		}
 		for _, f := range tc.expectedFiles {
+			// TODO: Do we need to use first value in return? Ideally, we should...
 			absolutePath := path.Join(cwd, f.path)
-
-			// TODO: Ensure there aren't extra files in actual
-
-			// TODO: Do a check to see if the file exists at all?
-
-			if f.content != nil {
-				bytes, err := os.ReadFile(absolutePath)
-				if err != nil {
-					errorMessage := fmt.Sprintf("Test with input %s: Unable to read expected file: %s:\n", input, absolutePath)
-					t.Error(errorMessage)
-				} else {
-					expectedFileContent := string(f.content)
-					actualFileContent := string(bytes)
-					if expectedFileContent != actualFileContent {
-						errorMessage := testCaseUnexpectedMessage(input, fmt.Sprintf("file content at path: %s", f.path), expectedFileContent, actualFileContent)
-						t.Error(errorMessage)
-					}
-				}
-			} else {
-				// TODO: Compare dir
-				entries, err := os.ReadDir(absolutePath)
-				if err != nil {
-					errorMessage := fmt.Sprintf("Test with input %s: Unable to read expected file: %s:\n", input, absolutePath)
-					t.Error(errorMessage)
-				} else {
-					// TODO: Actually look at the properties / contents of the directory
-					fmt.Println(entries)
-					// for _, entry := range entries {
-					// 	entry.Name()
-					// }
-					// t.Error()
-				}
+			_, err := expectedFileIsAtPath(f, absolutePath)
+			if err != nil {
+				errorMessage := testInputUnexpectedMessage(input, err.Error())
+				t.Error(errorMessage)
 			}
 		}
 	}
@@ -339,8 +310,64 @@ func tearDownTestDir(t *testing.T, testDir string) {
 	}
 }
 
-// TODO: Rename this method -- maybe do really factor out for my assert library
+func expectedFileIsAtPath(f file, filePath string) (bool, error) {
+	fileInfo, err := os.Stat(filePath)
+	if err != nil {
+		errorMessage := fmt.Sprintf("Unable to stat expected file: %s", filePath)
+		return false, errors.New(errorMessage)
+	}
+
+	actualMode := fileInfo.Mode()
+	if f.perm != actualMode {
+		errorMessage := testResultUnexpectedMessage(fmt.Sprintf("file perms at path: %s", filePath), f.perm, actualMode)
+		return false, errors.New(errorMessage)
+	}
+
+	if f.content != nil {
+		// Compare files
+		bytes, err := os.ReadFile(filePath)
+		if err != nil {
+			errorMessage := fmt.Sprintf("Unable to read expected file: %s:\n", filePath)
+			return false, errors.New(errorMessage)
+		} else {
+			expectedFileContent := string(f.content)
+			actualFileContent := string(bytes)
+			if expectedFileContent != actualFileContent {
+				errorMessage := testResultUnexpectedMessage(fmt.Sprintf("file content at path: %s", filePath), expectedFileContent, actualFileContent)
+				return false, errors.New(errorMessage)
+			}
+		}
+	} else {
+		// Compare dirs
+		entries, err := os.ReadDir(filePath)
+		if err != nil {
+			errorMessage := fmt.Sprintf("Unable to read expected file: %s:\n", filePath)
+			return false, errors.New(errorMessage)
+		} else {
+			// TODO: Actually look at the properties / contents of the directory -- maybe this is how to see if all files are present (probably!)
+			// Will this handle everything?
+			fmt.Println(entries)
+			// for _, entry := range entries {
+			// 	entry.Name()
+			// }
+			// t.Error()
+		}
+	}
+	return true, nil
+}
+
+// TODO: Rename this method
 // TODO: Rename `thing`
-func testCaseUnexpectedMessage(input string, thing string, expected string, actual string) string {
-	return fmt.Sprintf("Test with input %s: Unexpected %s\nExpected: %s\nActual  : %s\n", input, thing, expected, actual)
+func testCaseUnexpectedMessage[T any](input string, thing string, expected T, actual T) string {
+	testResultMessage := testResultUnexpectedMessage(thing, expected, actual)
+	testCaseMessage := testInputUnexpectedMessage(input, testResultMessage)
+	return testCaseMessage
+}
+
+func testInputUnexpectedMessage(input string, message string) string {
+	return fmt.Sprintf("Test with input %s: %s", input, message)
+}
+
+func testResultUnexpectedMessage[T any](thing string, expected T, actual T) string {
+	return fmt.Sprintf("Unexpected %s\nExpected: %v\nActual  : %v\n", thing, expected, actual)
 }
