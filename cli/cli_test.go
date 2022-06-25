@@ -11,6 +11,7 @@ import (
 	"github.com/jbrudvik/gmc/cli"
 )
 
+// TODO: Should I change all of these constants to []byte?
 const helpOutput string = "NAME:\n" +
 	"   gmc - (Go mod create) creates Go modules\n" +
 	"\n" +
@@ -72,8 +73,10 @@ const errorMessageModuleNameRequired string = "Error: Module name is required\n\
 const errorMessageTooManyModuleNames string = "Error: Only one module name is allowed\n\n"
 
 type file struct {
-	path    string
-	content *string // nil -> directory
+	path string
+
+	// Non-nil -> file, nil -> directory
+	content []byte
 }
 
 // TODO: Figure out how to ensure there aren't extra files -- maybe just count the tree somehow?
@@ -164,9 +167,9 @@ func TestRun(t *testing.T) {
 			0,
 			[]file{
 				{"a1", nil},
-				{"a1/go.mod", ptr("module a1\n\ngo 1.18\n")},
-				{"a1/.gitignore", ptr("a1")},
-				{"a1/main.go", ptr(mainGoContents)},
+				{"a1/go.mod", []byte("module a1\n\ngo 1.18\n")},
+				{"a1/.gitignore", []byte("a1")},
+				{"a1/main.go", []byte(mainGoContents)},
 			},
 		},
 		{
@@ -176,12 +179,12 @@ func TestRun(t *testing.T) {
 			0,
 			[]file{
 				{"a2", nil},
-				{"a2/go.mod", ptr("module a2\n\ngo 1.18\n")},
-				{"a2/.gitignore", ptr("a2")},
-				{"a2/main.go", ptr(mainGoContents)},
+				{"a2/go.mod", []byte("module a2\n\ngo 1.18\n")},
+				{"a2/.gitignore", []byte("a2")},
+				{"a2/main.go", []byte(mainGoContents)},
 				{"a2/.nova", nil},
 				{"a2/.nova/Tasks", nil},
-				{"a2/.nova/Tasks/Go.json", ptr(novaTaskContents)},
+				{"a2/.nova/Tasks/Go.json", []byte(novaTaskContents)},
 			},
 		},
 		{
@@ -191,12 +194,12 @@ func TestRun(t *testing.T) {
 			0,
 			[]file{
 				{"a3", nil},
-				{"a3/go.mod", ptr("module a3\n\ngo 1.18\n")},
-				{"a3/.gitignore", ptr("a3")},
-				{"a3/main.go", ptr(mainGoContents)},
+				{"a3/go.mod", []byte("module a3\n\ngo 1.18\n")},
+				{"a3/.gitignore", []byte("a3")},
+				{"a3/main.go", []byte(mainGoContents)},
 				{"a3/.nova", nil},
 				{"a3/.nova/Tasks", nil},
-				{"a3/.nova/Tasks/Go.json", ptr(novaTaskContents)},
+				{"a3/.nova/Tasks/Go.json", []byte(novaTaskContents)},
 			},
 		},
 		{
@@ -206,9 +209,9 @@ func TestRun(t *testing.T) {
 			0,
 			[]file{
 				{"foo", nil},
-				{"foo/go.mod", ptr("module example.com/foo\n\ngo 1.18\n")},
-				{"foo/.gitignore", ptr("foo")},
-				{"foo/main.go", ptr(mainGoContents)},
+				{"foo/go.mod", []byte("module example.com/foo\n\ngo 1.18\n")},
+				{"foo/.gitignore", []byte("foo")},
+				{"foo/main.go", []byte(mainGoContents)},
 			},
 		},
 		{
@@ -218,12 +221,12 @@ func TestRun(t *testing.T) {
 			0,
 			[]file{
 				{"bar", nil},
-				{"bar/go.mod", ptr("module example.com/foo/bar\n\ngo 1.18\n")},
-				{"bar/.gitignore", ptr("bar")},
-				{"bar/main.go", ptr(mainGoContents)},
+				{"bar/go.mod", []byte("module example.com/foo/bar\n\ngo 1.18\n")},
+				{"bar/.gitignore", []byte("bar")},
+				{"bar/main.go", []byte(mainGoContents)},
 				{"bar/.nova", nil},
 				{"bar/.nova/Tasks", nil},
-				{"bar/.nova/Tasks/Go.json", ptr(novaTaskContents)},
+				{"bar/.nova/Tasks/Go.json", []byte(novaTaskContents)},
 			},
 		},
 		{
@@ -233,12 +236,12 @@ func TestRun(t *testing.T) {
 			0,
 			[]file{
 				{"baz", nil},
-				{"baz/go.mod", ptr("module example.com/foo/bar/baz\n\ngo 1.18\n")},
-				{"baz/.gitignore", ptr("baz")},
-				{"baz/main.go", ptr(mainGoContents)},
+				{"baz/go.mod", []byte("module example.com/foo/bar/baz\n\ngo 1.18\n")},
+				{"baz/.gitignore", []byte("baz")},
+				{"baz/main.go", []byte(mainGoContents)},
 				{"baz/.nova", nil},
 				{"baz/.nova/Tasks", nil},
-				{"baz/.nova/Tasks/Go.json", ptr(novaTaskContents)},
+				{"baz/.nova/Tasks/Go.json", []byte(novaTaskContents)},
 			},
 		},
 	}
@@ -287,7 +290,7 @@ func TestRun(t *testing.T) {
 					errorMessage := fmt.Sprintf("Test with input %s: Unable to read expected file: %s:\n", input, absolutePath)
 					t.Error(errorMessage)
 				} else {
-					expectedFileContent := *f.content
+					expectedFileContent := string(f.content)
 					actualFileContent := string(bytes)
 					if expectedFileContent != actualFileContent {
 						errorMessage := testCaseUnexpectedMessage(input, fmt.Sprintf("file content at path: %s", f.path), expectedFileContent, actualFileContent)
@@ -340,8 +343,4 @@ func tearDownTestDir(t *testing.T, testDir string) {
 // TODO: Rename `thing`
 func testCaseUnexpectedMessage(input string, thing string, expected string, actual string) string {
 	return fmt.Sprintf("Test with input %s: Unexpected %s\nExpected: %s\nActual  : %s\n", input, thing, expected, actual)
-}
-
-func ptr[T any](a T) *T {
-	return &a
 }
