@@ -116,6 +116,7 @@ func createModule(module string, extraDirs []string) error {
 	if err != nil {
 		return err
 	}
+	defer os.Chdir("..")
 
 	// Create go.mod
 	cmd := exec.Command("go", "mod", "init", module)
