@@ -161,7 +161,7 @@ func TestRun(t *testing.T) {
 		},
 		{
 			[]string{"a1"},
-			"Creating module \"a1\"...\nSuccess!\n",
+			"Creating Go module \"a1\"...\nSuccess! Created Go module \"a1\" in new directory: a1\n",
 			"",
 			0,
 			&file{"a1", dirPerms, nil, []file{
@@ -172,7 +172,7 @@ func TestRun(t *testing.T) {
 		},
 		{
 			[]string{"-n", "a2"},
-			"Creating module \"a2\"...\nSuccess!\n",
+			"Creating Go module \"a2\"...\nSuccess! Created Go module \"a2\" in new directory: a2\n",
 			"",
 			0,
 			&file{"a2", dirPerms, nil, []file{
@@ -188,7 +188,7 @@ func TestRun(t *testing.T) {
 		},
 		{
 			[]string{"--nova", "a3"},
-			"Creating module \"a3\"...\nSuccess!\n",
+			"Creating Go module \"a3\"...\nSuccess! Created Go module \"a3\" in new directory: a3\n",
 			"",
 			0,
 			&file{"a3", dirPerms, nil, []file{
@@ -204,7 +204,7 @@ func TestRun(t *testing.T) {
 		},
 		{
 			[]string{"example.com/foo"},
-			"Creating module \"example.com/foo\"...\nSuccess!\n",
+			"Creating Go module \"example.com/foo\"...\nSuccess! Created Go module \"example.com/foo\" in new directory: foo\n",
 			"",
 			0,
 			&file{"foo", dirPerms, nil, []file{
@@ -215,7 +215,7 @@ func TestRun(t *testing.T) {
 		},
 		{
 			[]string{"--nova", "example.com/foo/bar"},
-			"Creating module \"example.com/foo/bar\"...\nSuccess!\n",
+			"Creating Go module \"example.com/foo/bar\"...\nSuccess! Created Go module \"example.com/foo/bar\" in new directory: bar\n",
 			"",
 			0,
 			&file{"bar", dirPerms, nil, []file{
@@ -231,7 +231,7 @@ func TestRun(t *testing.T) {
 		},
 		{
 			[]string{"-n", "example.com/foo/bar/baz"},
-			"Creating module \"example.com/foo/bar/baz\"...\nSuccess!\n",
+			"Creating Go module \"example.com/foo/bar/baz\"...\nSuccess! Created Go module \"example.com/foo/bar/baz\" in new directory: baz\n",
 			"",
 			0,
 			&file{"baz", dirPerms, nil, []file{

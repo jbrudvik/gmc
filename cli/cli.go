@@ -87,62 +87,67 @@ func AppWithCustomOutputAndExit(output io.Writer, errorOutput io.Writer, exitCod
 					extraDirs = append(extraDirs, "nova")
 				}
 
-				// TODO: Add showing nova (and other) options to above? So it's clear
-				fmt.Fprintf(output, "Creating module \"%s\"...\n", module)
-				err := createModule(module, extraDirs)
+				fmt.Fprintf(output, "Creating Go module \"%s\"...\n", module)
+				moduleDir, err := createModule(module, extraDirs)
+
 				if err != nil {
-					errorMessage := fmt.Sprintf("Failed to create module \"%s\": %s", module, err)
+					errorMessage := fmt.Sprintf("Failed to create Go module \"%s\": %s", module, err)
 					return errors.New(errorMessage)
+				} else {
+					successMessage := fmt.Sprintf("Success! Created Go module \"%s\"", module)
+					if moduleDir != nil {
+						// NOTE: This should always execute
+						successMessage += fmt.Sprintf(" in new directory: %s", *moduleDir)
+					}
+					fmt.Fprintf(output, "%s\n", successMessage)
 				}
-				fmt.Fprintf(output, "Success!\n")
 			}
 			return nil
 		},
 	}
 }
 
-// TODO: Is `extras` idiomatic? Do it the right way
-func createModule(module string, extraDirs []string) error {
-	moduleBase := path.Base(module)
+func createModule(module string, extraDirs []string) (*string, error) {
+	moduleDir := path.Base(module)
 
 	// Create module directory && change into the directory
-	err := os.Mkdir(moduleBase, 0755)
+	err := os.Mkdir(moduleDir, 0755)
 	if err != nil {
-		return err
+		return nil, err
 	}
-	err = os.Chdir(moduleBase)
+	err = os.Chdir(moduleDir)
 	if err != nil {
-		return err
+		return nil, err
 	}
 	defer os.Chdir("..")
 
 	// Create go.mod
 	cmd := exec.Command("go", "mod", "init", module)
 	if err = cmd.Run(); err != nil {
-		return err
+		return nil, err
 	}
 
 	// Create .gitignore
-	err = os.WriteFile(".gitignore", []byte(moduleBase), 0644)
+	err = os.WriteFile(".gitignore", []byte(moduleDir), 0644)
 	if err != nil {
-		return err
+		return nil, err
 	}
 
 	// Copy over assets
 	err = copyEmbeddedFS(assets, assetsDefaultDir)
 	if err != nil {
-		return err
+		return nil, err
 	}
 
 	// Copy over extras
 	for _, extraDir := range extraDirs {
 		err = copyEmbeddedFS(assets, extraDir)
 		if err != nil {
-			return err
+			return nil, err
 		}
 	}
 
-	return nil
+	return &moduleDir, nil
 }
 
 func copyEmbeddedFS(srcFS embed.FS, src string) error {
