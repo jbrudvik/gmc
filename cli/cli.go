@@ -31,7 +31,7 @@ const Description string = Name + " [module name] creates a directory containing
 var assets embed.FS
 
 const assetsDir string = "assets"
-const assetsDefaultDir string = "default" // TODO: Should we name default dir something else?
+const assetsDefaultDir string = "default"
 
 func App() *cli.App {
 	return AppWithCustomOutput(os.Stdout, os.Stderr)
@@ -125,13 +125,13 @@ func createModule(module string, extraDirs []string) (*string, error) {
 	defer os.Chdir("..")
 
 	// Create go.mod
-	cmd := exec.Command("go", "mod", "init", module) // TODO: Should go mod init be a (private) constant?
+	cmd := exec.Command("go", "mod", "init", module)
 	if err = cmd.Run(); err != nil {
 		return nil, err
 	}
 
 	// Create .gitignore
-	err = os.WriteFile(".gitignore", []byte(moduleDir), 0644) // TODO: Should ".gitignore" be a constant?
+	err = os.WriteFile(".gitignore", []byte(moduleDir), 0644)
 	if err != nil {
 		return nil, err
 	}
