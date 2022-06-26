@@ -161,7 +161,7 @@ func TestRun(t *testing.T) {
 		},
 		{
 			[]string{"a1"},
-			"",
+			"Creating module \"a1\"...\nSuccess!\n",
 			"",
 			0,
 			&file{"a1", dirPerms, nil, []file{
@@ -172,7 +172,7 @@ func TestRun(t *testing.T) {
 		},
 		{
 			[]string{"-n", "a2"},
-			"",
+			"Creating module \"a2\"...\nSuccess!\n",
 			"",
 			0,
 			&file{"a2", dirPerms, nil, []file{
@@ -188,7 +188,7 @@ func TestRun(t *testing.T) {
 		},
 		{
 			[]string{"--nova", "a3"},
-			"",
+			"Creating module \"a3\"...\nSuccess!\n",
 			"",
 			0,
 			&file{"a3", dirPerms, nil, []file{
@@ -204,7 +204,7 @@ func TestRun(t *testing.T) {
 		},
 		{
 			[]string{"example.com/foo"},
-			"",
+			"Creating module \"example.com/foo\"...\nSuccess!\n",
 			"",
 			0,
 			&file{"foo", dirPerms, nil, []file{
@@ -215,7 +215,7 @@ func TestRun(t *testing.T) {
 		},
 		{
 			[]string{"--nova", "example.com/foo/bar"},
-			"",
+			"Creating module \"example.com/foo/bar\"...\nSuccess!\n",
 			"",
 			0,
 			&file{"bar", dirPerms, nil, []file{
@@ -231,7 +231,7 @@ func TestRun(t *testing.T) {
 		},
 		{
 			[]string{"-n", "example.com/foo/bar/baz"},
-			"",
+			"Creating module \"example.com/foo/bar/baz\"...\nSuccess!\n",
 			"",
 			0,
 			&file{"baz", dirPerms, nil, []file{

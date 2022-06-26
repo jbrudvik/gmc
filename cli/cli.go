@@ -82,21 +82,19 @@ func AppWithCustomOutputAndExit(output io.Writer, errorOutput io.Writer, exitCod
 				return errors.New(errorMessage)
 			} else {
 				module := args.First()
-				fmt.Printf("Creating module \"%s\"...\n", module)
-
-				// TODO: Add showing nova (and other) options to above? So it's clear
-				extraDirs := []string{} // TODO: Use make instead? Google it.
+				var extraDirs []string
 				if c.Bool("nova") {
 					extraDirs = append(extraDirs, "nova")
 				}
 
+				// TODO: Add showing nova (and other) options to above? So it's clear
+				fmt.Fprintf(output, "Creating module \"%s\"...\n", module)
 				err := createModule(module, extraDirs)
-
 				if err != nil {
 					errorMessage := fmt.Sprintf("Failed to create module \"%s\": %s", module, err)
-					return cli.Exit(errorMessage, 1)
+					return errors.New(errorMessage)
 				}
-				fmt.Println("Success!")
+				fmt.Fprintf(output, "Success!\n")
 			}
 			return nil
 		},
@@ -147,8 +145,6 @@ func createModule(module string, extraDirs []string) error {
 	return nil
 }
 
-// - Q: Can test code use its own embed? That's probably the right way to do this.
-//     - Especially if we can write to an in-memory FS (to watch that its done correctly)
 func copyEmbeddedFS(srcFS embed.FS, src string) error {
 	entries, err := srcFS.ReadDir(".")
 	if err != nil {
