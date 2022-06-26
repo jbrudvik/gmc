@@ -330,7 +330,7 @@ func tearDownTestDir(t *testing.T, testDir string) {
 
 func testCaseUnexpectedMessage[T any](input string, topic string, expected T, actual T) string {
 	testResultMessage := testResultUnexpectedMessage(topic, expected, actual)
-	testCaseMessage := testInputUnexpectedMessage(topic, testResultMessage)
+	testCaseMessage := testInputUnexpectedMessage(input, testResultMessage)
 	return testCaseMessage
 }
 
