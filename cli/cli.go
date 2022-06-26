@@ -45,8 +45,12 @@ func AppWithCustomOutput(output io.Writer, errorOutput io.Writer) *cli.App {
 
 func AppWithCustomOutputAndExit(output io.Writer, errorOutput io.Writer, exitCodeHandler func(int)) *cli.App {
 	return &cli.App{
-		Writer:    output,
-		ErrWriter: errorOutput,
+		Name:        Name,
+		Usage:       "(Go mod create) creates Go modules",
+		Version:     Version,
+		Description: Description,
+		Writer:      output,
+		ErrWriter:   errorOutput,
 		ExitErrHandler: func(c *cli.Context, err error) {
 			if err != nil {
 				errorMessage := fmt.Sprintf("%s\n\n", err)
@@ -60,12 +64,7 @@ func AppWithCustomOutputAndExit(output io.Writer, errorOutput io.Writer, exitCod
 		OnUsageError: func(c *cli.Context, err error, isSubcommand bool) error {
 			return errors.New("Error: Unknown flag")
 		},
-		Name:            Name,
-		Usage:           "(Go mod create) creates Go modules",
-		Description:     Description,
-		Version:         Version,
 		HideHelpCommand: true,
-		ArgsUsage:       "[module name]",
 		Flags: []cli.Flag{
 			&cli.BoolFlag{
 				Name:    "nova",
@@ -73,6 +72,7 @@ func AppWithCustomOutputAndExit(output io.Writer, errorOutput io.Writer, exitCod
 				Aliases: []string{"n"},
 			},
 		},
+		ArgsUsage: "[module name]",
 		Action: func(c *cli.Context) error {
 			args := c.Args()
 			if args.Len() < 1 {
