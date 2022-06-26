@@ -5,7 +5,7 @@
 ## Install
 
 ```sh
-$ go install github.com/jbrudvik/gmc
+$ go install github.com/jbrudvik/gmc@latest
 ```
 
 ## Create a package
