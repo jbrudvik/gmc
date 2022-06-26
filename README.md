@@ -5,7 +5,7 @@
 ## Usage
 
 ```
-$ gmc
+$ gmc -h
 
 NAME:
    gmc - (Go mod create) creates Go modules
