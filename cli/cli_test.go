@@ -36,7 +36,7 @@ const helpOutput string = "NAME:\n" +
 	"   --help, -h     show help (default: false)\n" +
 	"   --version, -v  print the version (default: false)\n"
 
-var versionOutput string = fmt.Sprintf("gmc version %s\n", cli.Version)
+var versionOutput string = fmt.Sprintf("%s version %s\n", cli.Name, cli.Version)
 
 const mainGoContents string = "package main\n" +
 	"\n" +
@@ -262,7 +262,7 @@ func TestRun(t *testing.T) {
 			}
 		}
 		app := cli.AppWithCustomOutputAndExit(&outputBuffer, &errorOutputBuffer, exitCodeHandler)
-		_ = app.Run(append([]string{"gmc"}, tc.args...))
+		_ = app.Run(append([]string{cli.Name}, tc.args...))
 		actualOutput := outputBuffer.String()
 		actualErrorOutput := errorOutputBuffer.String()
 

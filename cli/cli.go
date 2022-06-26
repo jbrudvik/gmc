@@ -14,7 +14,18 @@ import (
 	"github.com/urfave/cli/v2"
 )
 
+const Name string = "gmc"
 const Version string = "v0.0.1"
+const Url string = "https://github.com/jbrudvik/" + Name
+const Description string = Name + " [module name] creates a directory containing:\n" +
+	"- go.mod            Go module metadata\n" +
+	"- .gitignore        ignores your module's binary\n" +
+	"- main.go           your module's first code\n" +
+	"- .nova (Optional)  Nova editor configuration\n" +
+	"\n" +
+	"This directory can be immediately built/run/installed using the `go` CLI.\n" +
+	"\n" +
+	"More information: " + Url
 
 //go:embed all:assets
 var assets embed.FS
@@ -49,18 +60,9 @@ func AppWithCustomOutputAndExit(output io.Writer, errorOutput io.Writer, exitCod
 		OnUsageError: func(c *cli.Context, err error, isSubcommand bool) error {
 			return errors.New("Error: Unknown flag")
 		},
-		Name:  "gmc",
-		Usage: "(Go mod create) creates Go modules",
-		Description: "gmc [module name] creates a directory containing:\n" +
-			"- go.mod            Go module metadata\n" +
-			"- .gitignore        ignores your module's binary\n" +
-			"- main.go           your module's first code\n" +
-			"- .nova (Optional)  Nova editor configuration\n" +
-			"\n" +
-			"This directory can be immediately built/run/installed using the `go` CLI.\n" +
-			"\n" +
-			"More information: https://github.com/jbrudvik/gmc\n" +
-			"",
+		Name:            Name,
+		Usage:           "(Go mod create) creates Go modules",
+		Description:     Description,
 		Version:         Version,
 		HideHelpCommand: true,
 		ArgsUsage:       "[module name]",
