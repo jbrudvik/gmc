@@ -8,7 +8,7 @@ import (
 	"io/fs"
 	"os"
 	"os/exec"
-	"path"
+	"path/filepath"
 	"strings"
 
 	"github.com/urfave/cli/v2"
@@ -30,7 +30,8 @@ const Description string = Name + " [module name] creates a directory containing
 //go:embed all:assets
 var assets embed.FS
 
-const assetsDefaultDir string = "default"
+const assetsDir string = "assets"
+const assetsDefaultDir string = "default" // TODO: Should we name default dir something else?
 
 func App() *cli.App {
 	return AppWithCustomOutput(os.Stdout, os.Stderr)
@@ -110,7 +111,7 @@ func AppWithCustomOutputAndExit(output io.Writer, errorOutput io.Writer, exitCod
 }
 
 func createModule(module string, extraDirs []string) (*string, error) {
-	moduleDir := path.Base(module)
+	moduleDir := filepath.Base(module)
 
 	// Create module directory && change into the directory
 	err := os.Mkdir(moduleDir, 0755)
@@ -124,13 +125,13 @@ func createModule(module string, extraDirs []string) (*string, error) {
 	defer os.Chdir("..")
 
 	// Create go.mod
-	cmd := exec.Command("go", "mod", "init", module)
+	cmd := exec.Command("go", "mod", "init", module) // TODO: Should go mod init be a (private) constant?
 	if err = cmd.Run(); err != nil {
 		return nil, err
 	}
 
 	// Create .gitignore
-	err = os.WriteFile(".gitignore", []byte(moduleDir), 0644)
+	err = os.WriteFile(".gitignore", []byte(moduleDir), 0644) // TODO: Should ".gitignore" be a constant?
 	if err != nil {
 		return nil, err
 	}
@@ -153,30 +154,22 @@ func createModule(module string, extraDirs []string) (*string, error) {
 }
 
 func copyEmbeddedFS(srcFS embed.FS, src string) error {
-	entries, err := srcFS.ReadDir(".")
-	if err != nil {
-		return err
-	}
-	dir := entries[0] // The `assets` dir // TODO: Q: Should this be a constant?
-	root := dir.Name()
-	root = path.Join(root, src)
+	srcRoot := filepath.Join(assetsDir, src)
 
-	err = fs.WalkDir(srcFS, root, func(srcPath string, entry fs.DirEntry, err error) error {
+	err := fs.WalkDir(srcFS, srcRoot, func(srcPath string, entry fs.DirEntry, err error) error {
 		if err != nil {
 			return err
 		}
-
-		// TODO: This really can't be right. Right? We should just be walking a level lower... right?
-		// TODO: This more slickly
-		dstPath := strings.TrimPrefix(srcPath, root)
-		if dstPath == "" {
+		if srcRoot == srcPath {
+			// Ignore the root -- we only want its contents
 			return nil
 		}
-		dstPath = strings.TrimPrefix(dstPath, "/")
+
+		dstPath := withoutFilepathPrefix(srcPath, srcRoot)
 
 		if entry.IsDir() {
 			// Create dir
-			err = os.Mkdir(path.Join(".", dstPath), 0755)
+			err = os.Mkdir(filepath.Join(".", dstPath), 0755)
 			if err != nil {
 				return err
 			}
@@ -191,10 +184,18 @@ func copyEmbeddedFS(srcFS embed.FS, src string) error {
 				return err
 			}
 		}
+
 		return nil
 	})
+
 	if err != nil {
 		return err
 	}
+
 	return nil
+}
+
+func withoutFilepathPrefix(path string, pathPrefix string) string {
+	pathPrefixWithSeparator := pathPrefix + string(filepath.Separator)
+	return strings.TrimPrefix(path, pathPrefixWithSeparator)
 }

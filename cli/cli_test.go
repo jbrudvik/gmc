@@ -5,7 +5,7 @@ import (
 	"fmt"
 	"io/fs"
 	"os"
-	"path"
+	"path/filepath"
 	"testing"
 
 	"github.com/jbrudvik/gmc/cli"
@@ -283,7 +283,7 @@ func TestRun(t *testing.T) {
 		}
 		if tc.expectedFiles != nil {
 			walkDir(*tc.expectedFiles, cwd, func(f file, root string) {
-				filePath := path.Join(root, f.name)
+				filePath := filepath.Join(root, f.name)
 				assertExpectedFileIsAtPath(t, input, f, filePath)
 			})
 		} else {
@@ -346,7 +346,7 @@ func walkDir(f file, root string, fn func(file, string)) {
 	fn(f, root)
 
 	if f.files != nil {
-		root = path.Join(root, f.name)
+		root = filepath.Join(root, f.name)
 		for _, childFile := range f.files {
 			walkDir(childFile, root, fn)
 		}
@@ -397,7 +397,7 @@ func assertExpectedFileIsAtPath(t *testing.T, input string, f file, filePath str
 				actualFileName := actualEntry.Name()
 				_, ok := expectedEntriesExist[actualFileName]
 				if !ok {
-					errorMessage := fmt.Sprintf("Unexpected file exists: %s", path.Join(filePath, actualFileName))
+					errorMessage := fmt.Sprintf("Unexpected file exists: %s", filepath.Join(filePath, actualFileName))
 					t.Error(testInputUnexpectedMessage(input, errorMessage))
 				} else {
 					expectedEntriesExist[actualFileName] = true
@@ -406,7 +406,7 @@ func assertExpectedFileIsAtPath(t *testing.T, input string, f file, filePath str
 
 			for fileName, wasFound := range expectedEntriesExist {
 				if !wasFound {
-					errorMessage := fmt.Sprintf("Expected file not found: %s", path.Join(filePath, fileName))
+					errorMessage := fmt.Sprintf("Expected file not found: %s", filepath.Join(filePath, fileName))
 					t.Error(testInputUnexpectedMessage(input, errorMessage))
 				}
 			}
