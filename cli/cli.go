@@ -80,7 +80,6 @@ func AppWithCustomOutputAndExit(output io.Writer, errorOutput io.Writer, exitCod
 				errorMessage := fmt.Sprintf("Error: Module name is required")
 				return errors.New(errorMessage)
 			} else if args.Len() > 1 {
-				// TODO: Control showing help or not? Or just do it all the time?
 				errorMessage := fmt.Sprintf("Error: Only one module name is allowed")
 				return errors.New(errorMessage)
 			} else {
