@@ -2,7 +2,21 @@
 
 `gmc` (Go mod create) is a CLI that creates Go modules.
 
-## Usage
+## Install
+
+```sh
+$ go install github.com/jbrudvik/gmc
+```
+
+## Create a package
+
+```
+$ gmc example.com/foo/bar
+Creating Go module "example.com/foo/bar"...
+Success! Created Go module "example.com/foo/bar" in new directory: bar
+```
+
+## Show help
 
 ```
 $ gmc -h
@@ -31,10 +45,4 @@ GLOBAL OPTIONS:
    --nova, -n     include Nova configuration (default: false)
    --help, -h     show help (default: false)
    --version, -v  print the version (default: false)
-```
-
-## Install
-
-```sh
-$ go install github.com/jbrudvik/gmc
 ```
