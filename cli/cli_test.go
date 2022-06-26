@@ -2,7 +2,6 @@ package cli_test
 
 import (
 	"bytes"
-	"errors"
 	"fmt"
 	"io/fs"
 	"os"
@@ -11,15 +10,6 @@ import (
 
 	"github.com/jbrudvik/gmc/cli"
 )
-
-type file struct {
-	path    string
-	content []byte // Non-nil -> file, nil -> directory
-	perm    fs.FileMode
-}
-
-const dirPerms fs.FileMode = 0755 | fs.ModeDir
-const filePerms fs.FileMode = 0644
 
 const helpOutput string = "NAME:\n" +
 	"   gmc - (Go mod create) creates Go modules\n" +
@@ -81,13 +71,23 @@ const errorMessageUnknownFlag string = "Error: Unknown flag\n\n"
 const errorMessageModuleNameRequired string = "Error: Module name is required\n\n"
 const errorMessageTooManyModuleNames string = "Error: Only one module name is allowed\n\n"
 
+type file struct {
+	name    string
+	perm    fs.FileMode
+	content []byte // Non-nil for file
+	files   []file // Non-nil for directory
+}
+
+const dirPerms fs.FileMode = 0755 | fs.ModeDir
+const filePerms fs.FileMode = 0644
+
 func TestRun(t *testing.T) {
 	tests := []struct {
 		args                []string
 		expectedOutput      string
 		expectedErrorOutput string
 		expectedExitCode    int
-		expectedFiles       []file
+		expectedFiles       *file
 	}{
 		{
 			[]string{"-h"},
@@ -164,84 +164,86 @@ func TestRun(t *testing.T) {
 			"",
 			"",
 			0,
-			[]file{
-				{"a1", nil, dirPerms},
-				{"a1/go.mod", []byte("module a1\n\ngo 1.18\n"), filePerms},
-				{"a1/.gitignore", []byte("a1"), filePerms},
-				{"a1/main.go", []byte(mainGoContents), filePerms},
-			},
+			&file{"a1", dirPerms, nil, []file{
+				{"go.mod", filePerms, []byte("module a1\n\ngo 1.18\n"), nil},
+				{".gitignore", filePerms, []byte("a1"), nil},
+				{"main.go", filePerms, []byte(mainGoContents), nil},
+			}},
 		},
 		{
 			[]string{"-n", "a2"},
 			"",
 			"",
 			0,
-			[]file{
-				{"a2", nil, dirPerms},
-				{"a2/go.mod", []byte("module a2\n\ngo 1.18\n"), filePerms},
-				{"a2/.gitignore", []byte("a2"), filePerms},
-				{"a2/main.go", []byte(mainGoContents), filePerms},
-				{"a2/.nova", nil, dirPerms},
-				{"a2/.nova/Tasks", nil, dirPerms},
-				{"a2/.nova/Tasks/Go.json", []byte(novaTaskContents), filePerms},
-			},
+			&file{"a2", dirPerms, nil, []file{
+				{"go.mod", filePerms, []byte("module a2\n\ngo 1.18\n"), nil},
+				{".gitignore", filePerms, []byte("a2"), nil},
+				{"main.go", filePerms, []byte(mainGoContents), nil},
+				{".nova", dirPerms, nil, []file{
+					{"Tasks", dirPerms, nil, []file{
+						{"Go.json", filePerms, []byte(novaTaskContents), nil},
+					}},
+				}},
+			}},
 		},
 		{
 			[]string{"--nova", "a3"},
 			"",
 			"",
 			0,
-			[]file{
-				{"a3", nil, dirPerms},
-				{"a3/go.mod", []byte("module a3\n\ngo 1.18\n"), filePerms},
-				{"a3/.gitignore", []byte("a3"), filePerms},
-				{"a3/main.go", []byte(mainGoContents), filePerms},
-				{"a3/.nova", nil, dirPerms},
-				{"a3/.nova/Tasks", nil, dirPerms},
-				{"a3/.nova/Tasks/Go.json", []byte(novaTaskContents), filePerms},
-			},
+			&file{"a3", dirPerms, nil, []file{
+				{"go.mod", filePerms, []byte("module a3\n\ngo 1.18\n"), nil},
+				{".gitignore", filePerms, []byte("a3"), nil},
+				{"main.go", filePerms, []byte(mainGoContents), nil},
+				{".nova", dirPerms, nil, []file{
+					{"Tasks", dirPerms, nil, []file{
+						{"Go.json", filePerms, []byte(novaTaskContents), nil},
+					}},
+				}},
+			}},
 		},
 		{
 			[]string{"example.com/foo"},
 			"",
 			"",
 			0,
-			[]file{
-				{"foo", nil, dirPerms},
-				{"foo/go.mod", []byte("module example.com/foo\n\ngo 1.18\n"), filePerms},
-				{"foo/.gitignore", []byte("foo"), filePerms},
-				{"foo/main.go", []byte(mainGoContents), filePerms},
-			},
+			&file{"foo", dirPerms, nil, []file{
+				{"go.mod", filePerms, []byte("module example.com/foo\n\ngo 1.18\n"), nil},
+				{".gitignore", filePerms, []byte("foo"), nil},
+				{"main.go", filePerms, []byte(mainGoContents), nil},
+			}},
 		},
 		{
 			[]string{"--nova", "example.com/foo/bar"},
 			"",
 			"",
 			0,
-			[]file{
-				{"bar", nil, dirPerms},
-				{"bar/go.mod", []byte("module example.com/foo/bar\n\ngo 1.18\n"), filePerms},
-				{"bar/.gitignore", []byte("bar"), filePerms},
-				{"bar/main.go", []byte(mainGoContents), filePerms},
-				{"bar/.nova", nil, dirPerms},
-				{"bar/.nova/Tasks", nil, dirPerms},
-				{"bar/.nova/Tasks/Go.json", []byte(novaTaskContents), filePerms},
-			},
+			&file{"bar", dirPerms, nil, []file{
+				{"go.mod", filePerms, []byte("module example.com/foo/bar\n\ngo 1.18\n"), nil},
+				{".gitignore", filePerms, []byte("bar"), nil},
+				{"main.go", filePerms, []byte(mainGoContents), nil},
+				{".nova", dirPerms, nil, []file{
+					{"Tasks", dirPerms, nil, []file{
+						{"Go.json", filePerms, []byte(novaTaskContents), nil},
+					}},
+				}},
+			}},
 		},
 		{
 			[]string{"-n", "example.com/foo/bar/baz"},
 			"",
 			"",
 			0,
-			[]file{
-				{"baz", nil, dirPerms},
-				{"baz/go.mod", []byte("module example.com/foo/bar/baz\n\ngo 1.18\n"), filePerms},
-				{"baz/.gitignore", []byte("baz"), filePerms},
-				{"baz/main.go", []byte(mainGoContents), filePerms},
-				{"baz/.nova", nil, dirPerms},
-				{"baz/.nova/Tasks", nil, dirPerms},
-				{"baz/.nova/Tasks/Go.json", []byte(novaTaskContents), filePerms},
-			},
+			&file{"baz", dirPerms, nil, []file{
+				{"go.mod", filePerms, []byte("module example.com/foo/bar/baz\n\ngo 1.18\n"), nil},
+				{".gitignore", filePerms, []byte("baz"), nil},
+				{"main.go", filePerms, []byte(mainGoContents), nil},
+				{".nova", dirPerms, nil, []file{
+					{"Tasks", dirPerms, nil, []file{
+						{"Go.json", filePerms, []byte(novaTaskContents), nil},
+					}},
+				}},
+			}},
 		},
 	}
 
@@ -254,34 +256,50 @@ func TestRun(t *testing.T) {
 		var outputBuffer bytes.Buffer
 		var errorOutputBuffer bytes.Buffer
 		exitCodeHandler := func(exitCode int) {
+			// Test: Exit code
 			if tc.expectedExitCode != exitCode {
 				t.Errorf(testCaseUnexpectedMessage(input, "exit code", tc.expectedExitCode, exitCode))
 			}
 		}
-
 		app := cli.AppWithCustomOutputAndExit(&outputBuffer, &errorOutputBuffer, exitCodeHandler)
 		_ = app.Run(append([]string{"gmc"}, tc.args...))
-
 		actualOutput := outputBuffer.String()
 		actualErrorOutput := errorOutputBuffer.String()
+
+		// Test: Output
 		if actualOutput != tc.expectedOutput {
 			t.Error(testCaseUnexpectedMessage(input, "output", tc.expectedOutput, actualOutput))
 		}
+
+		// Test: Error output
 		if actualErrorOutput != tc.expectedErrorOutput {
 			t.Error(testCaseUnexpectedMessage(input, "error output", tc.expectedErrorOutput, actualErrorOutput))
 		}
 
+		// Test: Files created
 		cwd, err := os.Getwd()
 		if err != nil {
 			t.Error("Could not get cwd", err)
 		}
-		for _, f := range tc.expectedFiles {
-			// TODO: Do we need to use first value in return? Ideally, we should...
-			absolutePath := path.Join(cwd, f.path)
-			_, err := expectedFileIsAtPath(f, absolutePath)
+		if tc.expectedFiles != nil {
+			walkDir(*tc.expectedFiles, cwd, func(f file, root string) {
+				filePath := path.Join(root, f.name)
+				assertExpectedFileIsAtPath(t, input, f, filePath)
+			})
+		} else {
+			actualEntries, err := os.ReadDir(cwd)
 			if err != nil {
-				errorMessage := testInputUnexpectedMessage(input, err.Error())
-				t.Error(errorMessage)
+				errorMessage := fmt.Sprintf("Unable to read current directory: %s", cwd)
+				t.Error(testInputUnexpectedMessage(input, errorMessage))
+			} else {
+				if len(actualEntries) > 0 {
+					fileNames := []string{}
+					for _, actualEntry := range actualEntries {
+						fileNames = append(fileNames, actualEntry.Name())
+					}
+					errorMessage := fmt.Sprintf("Files were created when none were expected: %v", fileNames)
+					t.Error(testInputUnexpectedMessage(input, errorMessage))
+				}
 			}
 		}
 	}
@@ -310,57 +328,9 @@ func tearDownTestDir(t *testing.T, testDir string) {
 	}
 }
 
-func expectedFileIsAtPath(f file, filePath string) (bool, error) {
-	fileInfo, err := os.Stat(filePath)
-	if err != nil {
-		errorMessage := fmt.Sprintf("Unable to stat expected file: %s", filePath)
-		return false, errors.New(errorMessage)
-	}
-
-	actualMode := fileInfo.Mode()
-	if f.perm != actualMode {
-		errorMessage := testResultUnexpectedMessage(fmt.Sprintf("file perms at path: %s", filePath), f.perm, actualMode)
-		return false, errors.New(errorMessage)
-	}
-
-	if f.content != nil {
-		// Compare files
-		bytes, err := os.ReadFile(filePath)
-		if err != nil {
-			errorMessage := fmt.Sprintf("Unable to read expected file: %s:\n", filePath)
-			return false, errors.New(errorMessage)
-		} else {
-			expectedFileContent := string(f.content)
-			actualFileContent := string(bytes)
-			if expectedFileContent != actualFileContent {
-				errorMessage := testResultUnexpectedMessage(fmt.Sprintf("file content at path: %s", filePath), expectedFileContent, actualFileContent)
-				return false, errors.New(errorMessage)
-			}
-		}
-	} else {
-		// Compare dirs
-		entries, err := os.ReadDir(filePath)
-		if err != nil {
-			errorMessage := fmt.Sprintf("Unable to read expected file: %s:\n", filePath)
-			return false, errors.New(errorMessage)
-		} else {
-			// TODO: Actually look at the properties / contents of the directory -- maybe this is how to see if all files are present (probably!)
-			// Will this handle everything?
-			fmt.Println(entries)
-			// for _, entry := range entries {
-			// 	entry.Name()
-			// }
-			// t.Error()
-		}
-	}
-	return true, nil
-}
-
-// TODO: Rename this method
-// TODO: Rename `thing`
-func testCaseUnexpectedMessage[T any](input string, thing string, expected T, actual T) string {
-	testResultMessage := testResultUnexpectedMessage(thing, expected, actual)
-	testCaseMessage := testInputUnexpectedMessage(input, testResultMessage)
+func testCaseUnexpectedMessage[T any](input string, topic string, expected T, actual T) string {
+	testResultMessage := testResultUnexpectedMessage(topic, expected, actual)
+	testCaseMessage := testInputUnexpectedMessage(topic, testResultMessage)
 	return testCaseMessage
 }
 
@@ -370,4 +340,76 @@ func testInputUnexpectedMessage(input string, message string) string {
 
 func testResultUnexpectedMessage[T any](thing string, expected T, actual T) string {
 	return fmt.Sprintf("Unexpected %s\nExpected: %v\nActual  : %v\n", thing, expected, actual)
+}
+
+func walkDir(f file, root string, fn func(file, string)) {
+	fn(f, root)
+
+	if f.files != nil {
+		root = path.Join(root, f.name)
+		for _, childFile := range f.files {
+			walkDir(childFile, root, fn)
+		}
+	}
+}
+
+func assertExpectedFileIsAtPath(t *testing.T, input string, f file, filePath string) {
+	fileInfo, err := os.Stat(filePath)
+	if err != nil {
+		errorMessage := fmt.Sprintf("Unable to stat expected file: %s", filePath)
+		t.Error(testInputUnexpectedMessage(input, errorMessage))
+		return
+	}
+
+	actualMode := fileInfo.Mode()
+	if f.perm != actualMode {
+		errorMessage := testResultUnexpectedMessage(fmt.Sprintf("file perms at path: %s", filePath), f.perm, actualMode)
+		t.Error(errorMessage)
+	}
+
+	if f.content != nil {
+		// Compare files
+		bytes, err := os.ReadFile(filePath)
+		if err != nil {
+			errorMessage := fmt.Sprintf("Unable to read expected file: %s", filePath)
+			t.Error(testInputUnexpectedMessage(input, errorMessage))
+		} else {
+			expectedFileContent := string(f.content)
+			actualFileContent := string(bytes)
+			if expectedFileContent != actualFileContent {
+				errorMessage := testResultUnexpectedMessage(fmt.Sprintf("file content at path: %s", filePath), expectedFileContent, actualFileContent)
+				t.Error(testInputUnexpectedMessage(input, errorMessage))
+			}
+		}
+	} else {
+		// Compare dirs
+		actualEntries, err := os.ReadDir(filePath)
+		if err != nil {
+			errorMessage := fmt.Sprintf("Unable to read expected directory: %s", filePath)
+			t.Error(errorMessage)
+		} else {
+			expectedEntriesExist := map[string]bool{}
+			for _, expectedEntry := range f.files {
+				expectedEntriesExist[expectedEntry.name] = false
+			}
+
+			for _, actualEntry := range actualEntries {
+				actualFileName := actualEntry.Name()
+				_, ok := expectedEntriesExist[actualFileName]
+				if !ok {
+					errorMessage := fmt.Sprintf("Unexpected file exists: %s", path.Join(filePath, actualFileName))
+					t.Error(testInputUnexpectedMessage(input, errorMessage))
+				} else {
+					expectedEntriesExist[actualFileName] = true
+				}
+			}
+
+			for fileName, wasFound := range expectedEntriesExist {
+				if !wasFound {
+					errorMessage := fmt.Sprintf("Expected file not found: %s", path.Join(filePath, fileName))
+					t.Error(testInputUnexpectedMessage(input, errorMessage))
+				}
+			}
+		}
+	}
 }
