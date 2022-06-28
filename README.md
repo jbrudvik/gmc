@@ -1,6 +1,6 @@
 # gmc (Go mod create)
 
-`gmc` (Go mod create) is a CLI that creates Go modules.
+`gmc` (Go mod create) is a CLI that creates Go modules so you can start coding ASAP
 
 ## Install
 
@@ -8,21 +8,33 @@
 $ go install github.com/jbrudvik/gmc@latest
 ```
 
-## Create a package
+## Create a module as Git repository
 
 ```
-$ gmc example.com/foo/bar
 Creating Go module "example.com/foo/bar"...
-Success! Created Go module "example.com/foo/bar" in new directory: bar
+- Created directory: bar
+- Initialized Go module
+- Created file     : bar/main.go
+- Initialized Git repository
+- Created file     : bar/.gitignore
+- Created file     : bar/README.md
+- Committed all files to Git repository
+- Added remote for Git repository: git@example.com:foo/bar.git
+
+Finished creating Go module "example.com/foo/bar"
+
+Next steps:
+- Create remote Git repository git@example.com:foo/bar.git
+- Push to remote Git repository: $ git push -u origin main
+- Start coding: $ $EDITOR bar
 ```
 
 ## Show help
 
 ```
 $ gmc -h
-
 NAME:
-   gmc - (Go mod create) creates Go modules
+   gmc - (Go mod create) creates Go modules so you can start coding ASAP
 
 USAGE:
    gmc [global options] [module name]
@@ -31,17 +43,23 @@ VERSION:
    v0.0.1
 
 DESCRIPTION:
-   gmc [module name] creates a directory containing:
-   - go.mod            Go module metadata
-   - .gitignore        ignores your module's binary
-   - main.go           your module's first code
-   - .nova (Optional)  Nova editor configuration
+   `gmc [module name]` creates a directory containing:
+   - Go module metadata: go.mod
+   - A place to start writing code: main.go
 
-   This directory can be immediately built/run/installed using the `go` CLI.
+   This module can be immediately run:
+
+       $ go run .
+       hello, world!
+
+   Optionally, the directory can also include:
+   - Git repository setup with .gitignore, README.md
+   - Nova editor configuration to build/test/run natively
 
    More information: https://github.com/jbrudvik/gmc
 
 GLOBAL OPTIONS:
+   --git, -g      create as Git repository (default: false)
    --nova, -n     include Nova configuration (default: false)
    --help, -h     show help (default: false)
    --version, -v  print the version (default: false)
