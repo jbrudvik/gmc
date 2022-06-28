@@ -11,22 +11,23 @@ $ go install github.com/jbrudvik/gmc@latest
 ## Create a module as Git repository
 
 ```
-Creating Go module "example.com/foo/bar"...
-- Created directory: bar
+$ gmc -g github.com/jbrudvik/foo
+Creating Go module "github.com/jbrudvik/foo"...
+- Created directory: foo
 - Initialized Go module
-- Created file     : bar/main.go
+- Created file     : foo/main.go
 - Initialized Git repository
-- Created file     : bar/.gitignore
-- Created file     : bar/README.md
+- Created file     : foo/.gitignore
+- Created file     : foo/README.md
 - Committed all files to Git repository
-- Added remote for Git repository: git@example.com:foo/bar.git
+- Added remote for Git repository: git@github.com:jbrudvik/foo.git
 
-Finished creating Go module "example.com/foo/bar"
+Finished creating Go module "github.com/jbrudvik/foo"
 
 Next steps:
-- Create remote Git repository git@example.com:foo/bar.git
+- Create remote Git repository git@github.com:jbrudvik/foo.git: https://github.com/new
 - Push to remote Git repository: $ git push -u origin main
-- Start coding: $ $EDITOR bar
+- Start coding: $ vim foo
 ```
 
 ## Show help
