@@ -89,7 +89,6 @@ const errorMessageModuleNameRequired string = "Error: Module name is required\n\
 const errorMessageTooManyModuleNames string = "Error: Only one module name is allowed\n\n"
 
 type testRunSetUpData struct {
-	originalEditorEnvVar     string
 	originalGitDefaultBranch string
 }
 
@@ -650,29 +649,24 @@ func testRunSetUp(t *testing.T) testRunSetUpData {
 	errorMessage := "Failure during run setup"
 
 	// Set EDITOR env var
-	originalEditorEnvVar := os.Getenv("EDITOR")
-	err := os.Setenv("EDITOR", editor)
-	if err != nil {
-		t.Fatalf("%s: Failed to set EDITOR env var: %s", errorMessage, err)
-	}
+	t.Setenv("EDITOR", editor)
 
 	// Set Git default branch
 	var cmdOutputBuffer bytes.Buffer
 	cmd := exec.Command("git", "config", "--global", "init.defaultBranch")
 	cmd.Stdout = &cmdOutputBuffer
 	originalGitDefaultBranch := ""
-	if err = cmd.Run(); err != nil {
+	if err := cmd.Run(); err != nil {
 		// Expected if default branch is not set
 	} else {
 		originalGitDefaultBranch = strings.TrimSpace(cmdOutputBuffer.String())
 	}
 	cmd = exec.Command("git", "config", "--global", "init.defaultBranch", defaultBranch)
-	if err = cmd.Run(); err != nil {
+	if err := cmd.Run(); err != nil {
 		t.Fatalf("%s: Unable to set Git default branch: %s", errorMessage, err)
 	}
 
 	return testRunSetUpData{
-		originalEditorEnvVar:     originalEditorEnvVar,
 		originalGitDefaultBranch: originalGitDefaultBranch,
 	}
 }
@@ -687,12 +681,6 @@ func runTestRunTearDown(t *testing.T, setUpData testRunSetUpData) {
 	}
 	if err := cmd.Run(); err != nil {
 		t.Errorf("%s: Unable to reset Git default branch setting (%s): %s", errorMessage, setUpData.originalGitDefaultBranch, err)
-	}
-
-	// Set EDITOR env var to original value
-	err := os.Setenv("EDITOR", setUpData.originalEditorEnvVar)
-	if err != nil {
-		t.Errorf("%s: Failed to set EDITOR env var to the original value (%s): %s", errorMessage, setUpData.originalEditorEnvVar, err)
 	}
 }
 
