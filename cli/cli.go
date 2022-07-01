@@ -40,6 +40,10 @@ var assets embed.FS
 const assetsDir string = "assets"
 const assetsDefaultDir string = "default"
 
+type gitRepo struct {
+	initialBranch *string
+}
+
 const gitignoreFileName string = ".gitignore"
 const readmeFileName string = "README.md"
 
@@ -51,10 +55,10 @@ func AppWithCustomOutput(output io.Writer, errorOutput io.Writer) *cli.App {
 	exitCodeHandler := func(exitCode int) {
 		os.Exit(exitCode)
 	}
-	return AppWithCustomOutputAndExit(os.Stdout, os.Stderr, exitCodeHandler)
+	return AppWithCustomAll(os.Stdout, os.Stderr, exitCodeHandler, nil)
 }
 
-func AppWithCustomOutputAndExit(output io.Writer, errorOutput io.Writer, exitCodeHandler func(int)) *cli.App {
+func AppWithCustomAll(output io.Writer, errorOutput io.Writer, exitCodeHandler func(int), gitInitialBranch *string) *cli.App {
 	return &cli.App{
 		Name:        Name,
 		Usage:       "(Go mod create) creates Go modules so you can start coding ASAP",
@@ -107,16 +111,19 @@ func AppWithCustomOutputAndExit(output io.Writer, errorOutput io.Writer, exitCod
 
 				// Process flags
 				var extraDirs []string
-				createAsGitRepo := false
+
+				var repo *gitRepo
 				if c.Bool("nova") {
 					extraDirs = append(extraDirs, "nova")
 				}
 				if c.Bool("git") {
-					createAsGitRepo = true
+					repo = &gitRepo{
+						initialBranch: gitInitialBranch,
+					}
 				}
 
 				// Create module
-				err := createModule(module, createAsGitRepo, extraDirs, output)
+				err := createModule(module, repo, extraDirs, output)
 				if err != nil {
 					errorMessage := fmt.Sprintf("Failed to create Go module \"%s\": %s", module, err)
 					return errors.New(errorMessage)
@@ -127,7 +134,7 @@ func AppWithCustomOutputAndExit(output io.Writer, errorOutput io.Writer, exitCod
 	}
 }
 
-func createModule(module string, createAsGitRepo bool, extraDirs []string, output io.Writer) error {
+func createModule(module string, repo *gitRepo, extraDirs []string, output io.Writer) error {
 	fmt.Fprintf(output, "Creating Go module \"%s\"...\n", module)
 
 	moduleBase := filepath.Base(module)
@@ -162,9 +169,12 @@ func createModule(module string, createAsGitRepo bool, extraDirs []string, outpu
 		}
 	}
 
-	if createAsGitRepo {
+	if repo != nil {
 		// Initialize Git repository
 		cmd := exec.Command("git", "init")
+		if repo.initialBranch != nil {
+			cmd = exec.Command("git", "init", "--initial-branch", *repo.initialBranch)
+		}
 		cmd.Dir = moduleBase
 		if err = cmd.Run(); err != nil {
 			return errors.New("Failed to initialize Git repository")

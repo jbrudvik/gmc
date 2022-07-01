@@ -14,7 +14,7 @@ import (
 )
 
 const editor string = "vim"
-const defaultBranch string = "main"
+const gitBranchName string = "main"
 
 var helpOutput string = fmt.Sprintf("NAME:\n"+
 	"   %s - (Go mod create) creates Go modules so you can start coding ASAP\n"+
@@ -88,10 +88,6 @@ const errorMessageUnknownFlag string = "Error: Unknown flag\n\n"
 const errorMessageModuleNameRequired string = "Error: Module name is required\n\n"
 const errorMessageTooManyModuleNames string = "Error: Only one module name is allowed\n\n"
 
-type testRunSetUpData struct {
-	originalGitDefaultBranch string
-}
-
 type testRunTestCaseSetUpData struct {
 	tempTestDir      string
 	originalFilePath string
@@ -118,6 +114,7 @@ const filePerms fs.FileMode = 0644
 
 type gitRepo struct {
 	dir            string
+	branchName     string
 	commitMessages []string
 	remote         *string
 }
@@ -370,7 +367,7 @@ func TestRun(t *testing.T) {
 				"- Create remote Git repository git@github.com:foo/bar.git: https://github.com/new\n"+
 				"- Push to remote Git repository: $ git push -u origin %s\n"+
 				"- Start coding: $ %s bar\n",
-				defaultBranch,
+				gitBranchName,
 				editor),
 			expectedErrorOutput: "",
 			expectedExitCode:    0,
@@ -383,6 +380,7 @@ func TestRun(t *testing.T) {
 			}},
 			expectedGitRepo: &gitRepo{
 				"bar",
+				gitBranchName,
 				[]string{"Initial commit"},
 				ptr("git@github.com:foo/bar.git"),
 			},
@@ -405,7 +403,7 @@ func TestRun(t *testing.T) {
 				"- Create remote Git repository git@github.com:foo/bar.git: https://github.com/new\n"+
 				"- Push to remote Git repository: $ git push -u origin %s\n"+
 				"- Start coding: $ %s bar\n",
-				defaultBranch,
+				gitBranchName,
 				editor,
 			),
 			expectedErrorOutput: "",
@@ -419,6 +417,7 @@ func TestRun(t *testing.T) {
 			}},
 			expectedGitRepo: &gitRepo{
 				"bar",
+				gitBranchName,
 				[]string{"Initial commit"},
 				ptr("git@github.com:foo/bar.git"),
 			},
@@ -444,7 +443,7 @@ func TestRun(t *testing.T) {
 				"- Create remote Git repository git@github.com:foo/bar.git: https://github.com/new\n"+
 				"- Push to remote Git repository: $ git push -u origin %s\n"+
 				"- Start coding: $ nova bar\n",
-				defaultBranch,
+				gitBranchName,
 			),
 			expectedErrorOutput: "",
 			expectedExitCode:    0,
@@ -462,6 +461,7 @@ func TestRun(t *testing.T) {
 			}},
 			expectedGitRepo: &gitRepo{
 				"bar",
+				gitBranchName,
 				[]string{"Initial commit"},
 				ptr("git@github.com:foo/bar.git"),
 			},
@@ -487,7 +487,7 @@ func TestRun(t *testing.T) {
 				"- Create remote Git repository git@github.com:foo/bar.git: https://github.com/new\n"+
 				"- Push to remote Git repository: $ git push -u origin %s\n"+
 				"- Start coding: $ nova bar\n",
-				defaultBranch,
+				gitBranchName,
 			),
 			expectedErrorOutput: "",
 			expectedExitCode:    0,
@@ -505,6 +505,7 @@ func TestRun(t *testing.T) {
 			}},
 			expectedGitRepo: &gitRepo{
 				"bar",
+				gitBranchName,
 				[]string{"Initial commit"},
 				ptr("git@github.com:foo/bar.git"),
 			},
@@ -530,7 +531,7 @@ func TestRun(t *testing.T) {
 				"- Create remote Git repository\n"+
 				"- Push to remote Git repository: $ git push -u origin %s\n"+
 				"- Start coding: $ nova foo\n",
-				defaultBranch,
+				gitBranchName,
 			),
 			expectedErrorOutput: "",
 			expectedExitCode:    0,
@@ -548,6 +549,7 @@ func TestRun(t *testing.T) {
 			}},
 			expectedGitRepo: &gitRepo{
 				"foo",
+				gitBranchName,
 				[]string{"Initial commit"},
 				nil,
 			},
@@ -573,7 +575,7 @@ func TestRun(t *testing.T) {
 				"- Create remote Git repository git@example.com:foo/bar.git\n"+
 				"- Push to remote Git repository: $ git push -u origin %s\n"+
 				"- Start coding: $ nova bar\n",
-				defaultBranch,
+				gitBranchName,
 			),
 			expectedErrorOutput: "",
 			expectedExitCode:    0,
@@ -591,14 +593,14 @@ func TestRun(t *testing.T) {
 			}},
 			expectedGitRepo: &gitRepo{
 				"bar",
+				gitBranchName,
 				[]string{"Initial commit"},
 				ptr("git@example.com:foo/bar.git"),
 			},
 		},
 	}
 
-	setUpData := testRunSetUp(t)
-	defer runTestRunTearDown(t, setUpData)
+	testRunSetUp(t)
 
 	for _, tc := range tests {
 		testName := strings.Join(tc.args, " ")
@@ -620,7 +622,7 @@ func testRunTestCase(t *testing.T, tc testRunTestCaseData) {
 			t.Errorf(testCaseUnexpectedMessage("exit code", tc.expectedExitCode, exitCode))
 		}
 	}
-	app := cli.AppWithCustomOutputAndExit(&outputBuffer, &errorOutputBuffer, exitCodeHandler)
+	app := cli.AppWithCustomAll(&outputBuffer, &errorOutputBuffer, exitCodeHandler, ptr(gitBranchName))
 	args := append([]string{cli.Name}, tc.args...)
 	_ = app.Run(args)
 	actualOutput := outputBuffer.String()
@@ -645,43 +647,9 @@ func testRunTestCase(t *testing.T, tc testRunTestCaseData) {
 	}
 }
 
-func testRunSetUp(t *testing.T) testRunSetUpData {
-	errorMessage := "Failure during run setup"
-
+func testRunSetUp(t *testing.T) {
 	// Set EDITOR env var
 	t.Setenv("EDITOR", editor)
-
-	// Set Git default branch
-	var cmdOutputBuffer bytes.Buffer
-	cmd := exec.Command("git", "config", "--global", "init.defaultBranch")
-	cmd.Stdout = &cmdOutputBuffer
-	originalGitDefaultBranch := ""
-	if err := cmd.Run(); err != nil {
-		// Expected if default branch is not set
-	} else {
-		originalGitDefaultBranch = strings.TrimSpace(cmdOutputBuffer.String())
-	}
-	cmd = exec.Command("git", "config", "--global", "init.defaultBranch", defaultBranch)
-	if err := cmd.Run(); err != nil {
-		t.Fatalf("%s: Unable to set Git default branch: %s", errorMessage, err)
-	}
-
-	return testRunSetUpData{
-		originalGitDefaultBranch: originalGitDefaultBranch,
-	}
-}
-
-func runTestRunTearDown(t *testing.T, setUpData testRunSetUpData) {
-	errorMessage := "Failure during run teardown"
-
-	// Set Git default branch to original value
-	cmd := exec.Command("git", "config", "--global", "init.defaultBranch", setUpData.originalGitDefaultBranch)
-	if setUpData.originalGitDefaultBranch == "" {
-		cmd = exec.Command("git", "config", "--global", "--unset", "init.defaultBranch")
-	}
-	if err := cmd.Run(); err != nil {
-		t.Errorf("%s: Unable to reset Git default branch setting (%s): %s", errorMessage, setUpData.originalGitDefaultBranch, err)
-	}
 }
 
 func testRunTestCaseSetUp(t *testing.T) testRunTestCaseSetUpData {
@@ -821,9 +789,23 @@ func assertExpectedFileIsAtPath(t *testing.T, f file, filePath string) {
 }
 
 func assertExpectedGitRepoExists(t *testing.T, expectedGitRepo gitRepo) {
-	// Assert all files have been committed to Git repository
+	// Assert Git repository has expected branch name
 	var cmdOutputBuffer bytes.Buffer
-	cmd := exec.Command("git", "status", "-s")
+	cmd := exec.Command("git", "branch", "--show-current")
+	cmd.Dir = expectedGitRepo.dir
+	cmd.Stdout = &cmdOutputBuffer
+	if err := cmd.Run(); err != nil {
+		t.Errorf("Unable to view Git branch name in %s:", expectedGitRepo.dir)
+		return
+	}
+	actualBranchName := strings.TrimSpace(cmdOutputBuffer.String())
+	if expectedGitRepo.branchName != actualBranchName {
+		t.Error(testCaseUnexpectedMessage("Git repository branch name", expectedGitRepo.branchName, actualBranchName))
+	}
+
+	// Assert all files have been committed to Git repository
+	cmdOutputBuffer = bytes.Buffer{}
+	cmd = exec.Command("git", "status", "-s")
 	cmd.Dir = expectedGitRepo.dir
 	cmd.Stdout = &cmdOutputBuffer
 	if err := cmd.Run(); err != nil {
@@ -844,10 +826,10 @@ func assertExpectedGitRepoExists(t *testing.T, expectedGitRepo gitRepo) {
 		t.Errorf("Unable to view Git commit history in %s:", expectedGitRepo.dir)
 		return
 	}
-	cmdOutput = strings.TrimSpace(cmdOutputBuffer.String())
+	actualCommitMessagesString := strings.TrimSpace(cmdOutputBuffer.String())
 	expectedCommitMessagesString := strings.Join(expectedGitRepo.commitMessages, "\n")
-	if expectedCommitMessagesString != cmdOutput {
-		t.Error(testCaseUnexpectedMessage("Git repository commit message history", expectedCommitMessagesString, cmdOutput))
+	if expectedCommitMessagesString != actualCommitMessagesString {
+		t.Error(testCaseUnexpectedMessage("Git repository commit message history", expectedCommitMessagesString, actualCommitMessagesString))
 	}
 
 	// Assert expected Git remote
