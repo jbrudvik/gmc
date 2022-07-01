@@ -633,7 +633,7 @@ func testRunTestCase(t *testing.T, tc testRunTestCaseData) {
 		}
 	}
 
-	app := cli.AppWithCustomAll(&outputBuffer, &errorOutputBuffer, exitCodeHandler, ptr(gitBranchName))
+	app := cli.AppWithCustomEverything(&outputBuffer, &errorOutputBuffer, exitCodeHandler, ptr(gitBranchName))
 	args := append([]string{cli.Name}, tc.args...)
 	_ = app.Run(args)
 	actualOutput := outputBuffer.String()
