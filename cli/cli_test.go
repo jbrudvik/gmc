@@ -648,7 +648,6 @@ func testRunTestCase(t *testing.T, tc testRunTestCaseData) {
 }
 
 func testRunSetUp(t *testing.T) {
-	// Set EDITOR env var
 	t.Setenv("EDITOR", editor)
 }
 
