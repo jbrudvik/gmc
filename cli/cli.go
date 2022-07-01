@@ -55,10 +55,10 @@ func AppWithCustomOutput(output io.Writer, errorOutput io.Writer) *cli.App {
 	exitCodeHandler := func(exitCode int) {
 		os.Exit(exitCode)
 	}
-	return AppWithCustomAll(os.Stdout, os.Stderr, exitCodeHandler, nil)
+	return AppWithCustomEverything(os.Stdout, os.Stderr, exitCodeHandler, nil)
 }
 
-func AppWithCustomAll(output io.Writer, errorOutput io.Writer, exitCodeHandler func(int), gitInitialBranch *string) *cli.App {
+func AppWithCustomEverything(output io.Writer, errorOutput io.Writer, exitCodeHandler func(int), gitInitialBranch *string) *cli.App {
 	return &cli.App{
 		Name:        Name,
 		Usage:       "(Go mod create) creates Go modules so you can start coding ASAP",
