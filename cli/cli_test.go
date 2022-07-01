@@ -88,11 +88,6 @@ const errorMessageUnknownFlag string = "Error: Unknown flag\n\n"
 const errorMessageModuleNameRequired string = "Error: Module name is required\n\n"
 const errorMessageTooManyModuleNames string = "Error: Only one module name is allowed\n\n"
 
-type testRunTestCaseSetUpData struct {
-	tempTestDir      string
-	originalFilePath string
-}
-
 type testRunTestCaseData struct {
 	args                []string
 	expectedOutput      string
@@ -600,19 +595,34 @@ func TestRun(t *testing.T) {
 		},
 	}
 
-	testRunSetUp(t)
+	t.Setenv("EDITOR", editor) // Automatically reset
 
 	for _, tc := range tests {
 		testName := strings.Join(tc.args, " ")
 		t.Run(testName, func(t *testing.T) {
+			// t.Parallel()
 			testRunTestCase(t, tc)
 		})
 	}
 }
 
 func testRunTestCase(t *testing.T, tc testRunTestCaseData) {
-	testCaseSetUpData := testRunTestCaseSetUp(t)
-	defer testRunTestCaseTearDown(t, testCaseSetUpData)
+	tempTestDir := t.TempDir() // Automatically cleaned up
+
+	cwd, err := os.Getwd()
+	if err != nil {
+		t.Fatal(err)
+	}
+	err = os.Chdir(tempTestDir)
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer func() {
+		err = os.Chdir(cwd)
+		if err != nil {
+			t.Fatal(err) // TODO: Maybe don't make this Fatal? Will it get in the way of other goroutines from cleaning up?
+		}
+	}()
 
 	var outputBuffer bytes.Buffer
 	var errorOutputBuffer bytes.Buffer
@@ -622,6 +632,7 @@ func testRunTestCase(t *testing.T, tc testRunTestCaseData) {
 			t.Errorf(testCaseUnexpectedMessage("exit code", tc.expectedExitCode, exitCode))
 		}
 	}
+
 	app := cli.AppWithCustomAll(&outputBuffer, &errorOutputBuffer, exitCodeHandler, ptr(gitBranchName))
 	args := append([]string{cli.Name}, tc.args...)
 	_ = app.Run(args)
@@ -644,52 +655,6 @@ func testRunTestCase(t *testing.T, tc testRunTestCaseData) {
 	// Test: Git
 	if tc.expectedGitRepo != nil {
 		assertExpectedGitRepoExists(t, *tc.expectedGitRepo)
-	}
-}
-
-func testRunSetUp(t *testing.T) {
-	t.Setenv("EDITOR", editor)
-}
-
-func testRunTestCaseSetUp(t *testing.T) testRunTestCaseSetUpData {
-	errorMessage := "Failure during run test case setup"
-
-	// Get current working directory
-	originalFilePath, err := os.Getwd()
-	if err != nil {
-		t.Fatalf("%s: Failed to get current working directory: %s", errorMessage, err)
-	}
-
-	// Create temp test directory
-	tempTestDir, err := os.MkdirTemp(".", "cli_test_dir")
-	if err != nil {
-		t.Fatalf("%s: Failed to create test directory: %s", errorMessage, err)
-	}
-	err = os.Chdir(tempTestDir)
-	if err != nil {
-		t.Fatalf("%s: Failed to change into test directory: %s", errorMessage, err)
-	}
-
-	result := testRunTestCaseSetUpData{
-		tempTestDir:      tempTestDir,
-		originalFilePath: originalFilePath,
-	}
-	return result
-}
-
-func testRunTestCaseTearDown(t *testing.T, testCaseSetUpData testRunTestCaseSetUpData) {
-	errorMessage := "Failure during run test case teardown"
-
-	// Move to original directory
-	err := os.Chdir(testCaseSetUpData.originalFilePath)
-	if err != nil {
-		t.Fatalf("%s: Failed to change to original directory (%s): %s", errorMessage, testCaseSetUpData.originalFilePath, err)
-	}
-
-	// Remove temp test directory
-	err = os.RemoveAll(testCaseSetUpData.tempTestDir)
-	if err != nil {
-		t.Fatalf("%s: Failed to remove temp test directory (%s): %s", errorMessage, testCaseSetUpData.tempTestDir, err)
 	}
 }
 
