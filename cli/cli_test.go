@@ -14,6 +14,7 @@ import (
 )
 
 const editor string = "vim"
+const defaultBranch string = "main"
 
 var helpOutput string = fmt.Sprintf("NAME:\n"+
 	"   %s - (Go mod create) creates Go modules so you can start coding ASAP\n"+
@@ -87,14 +88,17 @@ const errorMessageUnknownFlag string = "Error: Unknown flag\n\n"
 const errorMessageModuleNameRequired string = "Error: Module name is required\n\n"
 const errorMessageTooManyModuleNames string = "Error: Only one module name is allowed\n\n"
 
-type runTestCaseSetUpData struct {
-	tempTestDir              string
-	originalFilePath         string
+type testRunSetUpData struct {
 	originalEditorEnvVar     string
 	originalGitDefaultBranch string
 }
 
-type runTestCaseData struct {
+type testRunTestCaseSetUpData struct {
+	tempTestDir      string
+	originalFilePath string
+}
+
+type testRunTestCaseData struct {
 	args                []string
 	expectedOutput      string
 	expectedErrorOutput string
@@ -120,7 +124,7 @@ type gitRepo struct {
 }
 
 func TestRun(t *testing.T) {
-	tests := []runTestCaseData{
+	tests := []testRunTestCaseData{
 		{
 			args:                []string{"-h"},
 			expectedOutput:      helpOutput,
@@ -211,7 +215,8 @@ func TestRun(t *testing.T) {
 				"Finished creating Go module \"a1\"\n"+
 				"\n"+
 				"Next steps:\n"+
-				"- Start coding: $ %s a1\n", editor),
+				"- Start coding: $ %s a1\n",
+				editor),
 			expectedErrorOutput: "",
 			expectedExitCode:    0,
 			expectedFiles: &file{"a1", dirPerms, nil, []file{
@@ -284,7 +289,8 @@ func TestRun(t *testing.T) {
 				"Finished creating Go module \"github.com/foo\"\n"+
 				"\n"+
 				"Next steps:\n"+
-				"- Start coding: $ %s foo\n", editor),
+				"- Start coding: $ %s foo\n",
+				editor),
 			expectedErrorOutput: "",
 			expectedExitCode:    0,
 			expectedFiles: &file{"foo", dirPerms, nil, []file{
@@ -349,22 +355,24 @@ func TestRun(t *testing.T) {
 		},
 		{
 			args: []string{"--git", "github.com/foo/bar"},
-			expectedOutput: "Creating Go module \"github.com/foo/bar\"...\n" +
-				"- Created directory: bar\n" +
-				"- Initialized Go module\n" +
-				"- Created file     : bar/main.go\n" +
-				"- Initialized Git repository\n" +
-				"- Created file     : bar/.gitignore\n" +
-				"- Created file     : bar/README.md\n" +
-				"- Committed all files to Git repository\n" +
-				"- Added remote for Git repository: git@github.com:foo/bar.git\n" +
-				"\n" +
-				"Finished creating Go module \"github.com/foo/bar\"\n" +
-				"\n" +
-				"Next steps:\n" +
-				"- Create remote Git repository git@github.com:foo/bar.git: https://github.com/new\n" +
-				"- Push to remote Git repository: $ git push -u origin main\n" +
-				"- Start coding: $ vim bar\n",
+			expectedOutput: fmt.Sprintf("Creating Go module \"github.com/foo/bar\"...\n"+
+				"- Created directory: bar\n"+
+				"- Initialized Go module\n"+
+				"- Created file     : bar/main.go\n"+
+				"- Initialized Git repository\n"+
+				"- Created file     : bar/.gitignore\n"+
+				"- Created file     : bar/README.md\n"+
+				"- Committed all files to Git repository\n"+
+				"- Added remote for Git repository: git@github.com:foo/bar.git\n"+
+				"\n"+
+				"Finished creating Go module \"github.com/foo/bar\"\n"+
+				"\n"+
+				"Next steps:\n"+
+				"- Create remote Git repository git@github.com:foo/bar.git: https://github.com/new\n"+
+				"- Push to remote Git repository: $ git push -u origin %s\n"+
+				"- Start coding: $ %s bar\n",
+				defaultBranch,
+				editor),
 			expectedErrorOutput: "",
 			expectedExitCode:    0,
 			expectedFiles: &file{"bar", dirPerms, nil, []file{
@@ -382,22 +390,25 @@ func TestRun(t *testing.T) {
 		},
 		{
 			args: []string{"-g", "github.com/foo/bar"},
-			expectedOutput: "Creating Go module \"github.com/foo/bar\"...\n" +
-				"- Created directory: bar\n" +
-				"- Initialized Go module\n" +
-				"- Created file     : bar/main.go\n" +
-				"- Initialized Git repository\n" +
-				"- Created file     : bar/.gitignore\n" +
-				"- Created file     : bar/README.md\n" +
-				"- Committed all files to Git repository\n" +
-				"- Added remote for Git repository: git@github.com:foo/bar.git\n" +
-				"\n" +
-				"Finished creating Go module \"github.com/foo/bar\"\n" +
-				"\n" +
-				"Next steps:\n" +
-				"- Create remote Git repository git@github.com:foo/bar.git: https://github.com/new\n" +
-				"- Push to remote Git repository: $ git push -u origin main\n" +
-				"- Start coding: $ vim bar\n",
+			expectedOutput: fmt.Sprintf("Creating Go module \"github.com/foo/bar\"...\n"+
+				"- Created directory: bar\n"+
+				"- Initialized Go module\n"+
+				"- Created file     : bar/main.go\n"+
+				"- Initialized Git repository\n"+
+				"- Created file     : bar/.gitignore\n"+
+				"- Created file     : bar/README.md\n"+
+				"- Committed all files to Git repository\n"+
+				"- Added remote for Git repository: git@github.com:foo/bar.git\n"+
+				"\n"+
+				"Finished creating Go module \"github.com/foo/bar\"\n"+
+				"\n"+
+				"Next steps:\n"+
+				"- Create remote Git repository git@github.com:foo/bar.git: https://github.com/new\n"+
+				"- Push to remote Git repository: $ git push -u origin %s\n"+
+				"- Start coding: $ %s bar\n",
+				defaultBranch,
+				editor,
+			),
 			expectedErrorOutput: "",
 			expectedExitCode:    0,
 			expectedFiles: &file{"bar", dirPerms, nil, []file{
@@ -415,25 +426,27 @@ func TestRun(t *testing.T) {
 		},
 		{
 			args: []string{"--git", "--nova", "github.com/foo/bar"},
-			expectedOutput: "Creating Go module \"github.com/foo/bar\"...\n" +
-				"- Created directory: bar\n" +
-				"- Initialized Go module\n" +
-				"- Created file     : bar/main.go\n" +
-				"- Created directory: bar/.nova\n" +
-				"- Created directory: bar/.nova/Tasks\n" +
-				"- Created file     : bar/.nova/Tasks/Go.json\n" +
-				"- Initialized Git repository\n" +
-				"- Created file     : bar/.gitignore\n" +
-				"- Created file     : bar/README.md\n" +
-				"- Committed all files to Git repository\n" +
-				"- Added remote for Git repository: git@github.com:foo/bar.git\n" +
-				"\n" +
-				"Finished creating Go module \"github.com/foo/bar\"\n" +
-				"\n" +
-				"Next steps:\n" +
-				"- Create remote Git repository git@github.com:foo/bar.git: https://github.com/new\n" +
-				"- Push to remote Git repository: $ git push -u origin main\n" +
+			expectedOutput: fmt.Sprintf("Creating Go module \"github.com/foo/bar\"...\n"+
+				"- Created directory: bar\n"+
+				"- Initialized Go module\n"+
+				"- Created file     : bar/main.go\n"+
+				"- Created directory: bar/.nova\n"+
+				"- Created directory: bar/.nova/Tasks\n"+
+				"- Created file     : bar/.nova/Tasks/Go.json\n"+
+				"- Initialized Git repository\n"+
+				"- Created file     : bar/.gitignore\n"+
+				"- Created file     : bar/README.md\n"+
+				"- Committed all files to Git repository\n"+
+				"- Added remote for Git repository: git@github.com:foo/bar.git\n"+
+				"\n"+
+				"Finished creating Go module \"github.com/foo/bar\"\n"+
+				"\n"+
+				"Next steps:\n"+
+				"- Create remote Git repository git@github.com:foo/bar.git: https://github.com/new\n"+
+				"- Push to remote Git repository: $ git push -u origin %s\n"+
 				"- Start coding: $ nova bar\n",
+				defaultBranch,
+			),
 			expectedErrorOutput: "",
 			expectedExitCode:    0,
 			expectedFiles: &file{"bar", dirPerms, nil, []file{
@@ -456,25 +469,27 @@ func TestRun(t *testing.T) {
 		},
 		{
 			args: []string{"-g", "-n", "github.com/foo/bar"},
-			expectedOutput: "Creating Go module \"github.com/foo/bar\"...\n" +
-				"- Created directory: bar\n" +
-				"- Initialized Go module\n" +
-				"- Created file     : bar/main.go\n" +
-				"- Created directory: bar/.nova\n" +
-				"- Created directory: bar/.nova/Tasks\n" +
-				"- Created file     : bar/.nova/Tasks/Go.json\n" +
-				"- Initialized Git repository\n" +
-				"- Created file     : bar/.gitignore\n" +
-				"- Created file     : bar/README.md\n" +
-				"- Committed all files to Git repository\n" +
-				"- Added remote for Git repository: git@github.com:foo/bar.git\n" +
-				"\n" +
-				"Finished creating Go module \"github.com/foo/bar\"\n" +
-				"\n" +
-				"Next steps:\n" +
-				"- Create remote Git repository git@github.com:foo/bar.git: https://github.com/new\n" +
-				"- Push to remote Git repository: $ git push -u origin main\n" +
+			expectedOutput: fmt.Sprintf("Creating Go module \"github.com/foo/bar\"...\n"+
+				"- Created directory: bar\n"+
+				"- Initialized Go module\n"+
+				"- Created file     : bar/main.go\n"+
+				"- Created directory: bar/.nova\n"+
+				"- Created directory: bar/.nova/Tasks\n"+
+				"- Created file     : bar/.nova/Tasks/Go.json\n"+
+				"- Initialized Git repository\n"+
+				"- Created file     : bar/.gitignore\n"+
+				"- Created file     : bar/README.md\n"+
+				"- Committed all files to Git repository\n"+
+				"- Added remote for Git repository: git@github.com:foo/bar.git\n"+
+				"\n"+
+				"Finished creating Go module \"github.com/foo/bar\"\n"+
+				"\n"+
+				"Next steps:\n"+
+				"- Create remote Git repository git@github.com:foo/bar.git: https://github.com/new\n"+
+				"- Push to remote Git repository: $ git push -u origin %s\n"+
 				"- Start coding: $ nova bar\n",
+				defaultBranch,
+			),
 			expectedErrorOutput: "",
 			expectedExitCode:    0,
 			expectedFiles: &file{"bar", dirPerms, nil, []file{
@@ -497,25 +512,27 @@ func TestRun(t *testing.T) {
 		},
 		{
 			args: []string{"--git", "--nova", "foo"},
-			expectedOutput: "Creating Go module \"foo\"...\n" +
-				"- Created directory: foo\n" +
-				"- Initialized Go module\n" +
-				"- Created file     : foo/main.go\n" +
-				"- Created directory: foo/.nova\n" +
-				"- Created directory: foo/.nova/Tasks\n" +
-				"- Created file     : foo/.nova/Tasks/Go.json\n" +
-				"- Initialized Git repository\n" +
-				"- Created file     : foo/.gitignore\n" +
-				"- Created file     : foo/README.md\n" +
-				"- Committed all files to Git repository\n" +
-				"- NOTE: Unable to add remote for Git repository\n" +
-				"\n" +
-				"Finished creating Go module \"foo\"\n" +
-				"\n" +
-				"Next steps:\n" +
-				"- Create remote Git repository\n" +
-				"- Push to remote Git repository: $ git push -u origin main\n" +
+			expectedOutput: fmt.Sprintf("Creating Go module \"foo\"...\n"+
+				"- Created directory: foo\n"+
+				"- Initialized Go module\n"+
+				"- Created file     : foo/main.go\n"+
+				"- Created directory: foo/.nova\n"+
+				"- Created directory: foo/.nova/Tasks\n"+
+				"- Created file     : foo/.nova/Tasks/Go.json\n"+
+				"- Initialized Git repository\n"+
+				"- Created file     : foo/.gitignore\n"+
+				"- Created file     : foo/README.md\n"+
+				"- Committed all files to Git repository\n"+
+				"- NOTE: Unable to add remote for Git repository\n"+
+				"\n"+
+				"Finished creating Go module \"foo\"\n"+
+				"\n"+
+				"Next steps:\n"+
+				"- Create remote Git repository\n"+
+				"- Push to remote Git repository: $ git push -u origin %s\n"+
 				"- Start coding: $ nova foo\n",
+				defaultBranch,
+			),
 			expectedErrorOutput: "",
 			expectedExitCode:    0,
 			expectedFiles: &file{"foo", dirPerms, nil, []file{
@@ -538,25 +555,27 @@ func TestRun(t *testing.T) {
 		},
 		{
 			args: []string{"--git", "--nova", "example.com/foo/bar"},
-			expectedOutput: "Creating Go module \"example.com/foo/bar\"...\n" +
-				"- Created directory: bar\n" +
-				"- Initialized Go module\n" +
-				"- Created file     : bar/main.go\n" +
-				"- Created directory: bar/.nova\n" +
-				"- Created directory: bar/.nova/Tasks\n" +
-				"- Created file     : bar/.nova/Tasks/Go.json\n" +
-				"- Initialized Git repository\n" +
-				"- Created file     : bar/.gitignore\n" +
-				"- Created file     : bar/README.md\n" +
-				"- Committed all files to Git repository\n" +
-				"- Added remote for Git repository: git@example.com:foo/bar.git\n" +
-				"\n" +
-				"Finished creating Go module \"example.com/foo/bar\"\n" +
-				"\n" +
-				"Next steps:\n" +
-				"- Create remote Git repository git@example.com:foo/bar.git\n" +
-				"- Push to remote Git repository: $ git push -u origin main\n" +
+			expectedOutput: fmt.Sprintf("Creating Go module \"example.com/foo/bar\"...\n"+
+				"- Created directory: bar\n"+
+				"- Initialized Go module\n"+
+				"- Created file     : bar/main.go\n"+
+				"- Created directory: bar/.nova\n"+
+				"- Created directory: bar/.nova/Tasks\n"+
+				"- Created file     : bar/.nova/Tasks/Go.json\n"+
+				"- Initialized Git repository\n"+
+				"- Created file     : bar/.gitignore\n"+
+				"- Created file     : bar/README.md\n"+
+				"- Committed all files to Git repository\n"+
+				"- Added remote for Git repository: git@example.com:foo/bar.git\n"+
+				"\n"+
+				"Finished creating Go module \"example.com/foo/bar\"\n"+
+				"\n"+
+				"Next steps:\n"+
+				"- Create remote Git repository git@example.com:foo/bar.git\n"+
+				"- Push to remote Git repository: $ git push -u origin %s\n"+
 				"- Start coding: $ nova bar\n",
+				defaultBranch,
+			),
 			expectedErrorOutput: "",
 			expectedExitCode:    0,
 			expectedFiles: &file{"bar", dirPerms, nil, []file{
@@ -579,17 +598,20 @@ func TestRun(t *testing.T) {
 		},
 	}
 
+	setUpData := testRunSetUp(t)
+	defer runTestRunTearDown(t, setUpData)
+
 	for _, tc := range tests {
 		testName := strings.Join(tc.args, " ")
 		t.Run(testName, func(t *testing.T) {
-			runTestCase(t, tc)
+			testRunTestCase(t, tc)
 		})
 	}
 }
 
-func runTestCase(t *testing.T, tc runTestCaseData) {
-	setUpData := runTestCaseSetUp(t)
-	defer runTestCaseTearDown(t, setUpData)
+func testRunTestCase(t *testing.T, tc testRunTestCaseData) {
+	testCaseSetUpData := testRunTestCaseSetUp(t)
+	defer testRunTestCaseTearDown(t, testCaseSetUpData)
 
 	var outputBuffer bytes.Buffer
 	var errorOutputBuffer bytes.Buffer
@@ -624,8 +646,58 @@ func runTestCase(t *testing.T, tc runTestCaseData) {
 	}
 }
 
-func runTestCaseSetUp(t *testing.T) runTestCaseSetUpData {
-	errorMessage := "Failure during setup"
+func testRunSetUp(t *testing.T) testRunSetUpData {
+	errorMessage := "Failure during run setup"
+
+	// Set EDITOR env var
+	originalEditorEnvVar := os.Getenv("EDITOR")
+	err := os.Setenv("EDITOR", editor)
+	if err != nil {
+		t.Fatalf("%s: Failed to set EDITOR env var: %s", errorMessage, err)
+	}
+
+	// Set Git default branch
+	var cmdOutputBuffer bytes.Buffer
+	cmd := exec.Command("git", "config", "--global", "init.defaultBranch")
+	cmd.Stdout = &cmdOutputBuffer
+	originalGitDefaultBranch := ""
+	if err = cmd.Run(); err != nil {
+		// Expected if default branch is not set
+	} else {
+		originalGitDefaultBranch = strings.TrimSpace(cmdOutputBuffer.String())
+	}
+	cmd = exec.Command("git", "config", "--global", "init.defaultBranch", defaultBranch)
+	if err = cmd.Run(); err != nil {
+		t.Fatalf("%s: Unable to set Git default branch: %s", errorMessage, err)
+	}
+
+	return testRunSetUpData{
+		originalEditorEnvVar:     originalEditorEnvVar,
+		originalGitDefaultBranch: originalGitDefaultBranch,
+	}
+}
+
+func runTestRunTearDown(t *testing.T, setUpData testRunSetUpData) {
+	errorMessage := "Failure during run teardown"
+
+	// Set Git default branch to original value
+	cmd := exec.Command("git", "config", "--global", "init.defaultBranch", setUpData.originalGitDefaultBranch)
+	if setUpData.originalGitDefaultBranch == "" {
+		cmd = exec.Command("git", "config", "--global", "--unset", "init.defaultBranch")
+	}
+	if err := cmd.Run(); err != nil {
+		t.Errorf("%s: Unable to reset Git default branch setting (%s): %s", errorMessage, setUpData.originalGitDefaultBranch, err)
+	}
+
+	// Set EDITOR env var to original value
+	err := os.Setenv("EDITOR", setUpData.originalEditorEnvVar)
+	if err != nil {
+		t.Errorf("%s: Failed to set EDITOR env var to the original value (%s): %s", errorMessage, setUpData.originalEditorEnvVar, err)
+	}
+}
+
+func testRunTestCaseSetUp(t *testing.T) testRunTestCaseSetUpData {
+	errorMessage := "Failure during run test case setup"
 
 	// Get current working directory
 	originalFilePath, err := os.Getwd()
@@ -643,65 +715,26 @@ func runTestCaseSetUp(t *testing.T) runTestCaseSetUpData {
 		t.Fatalf("%s: Failed to change into test directory: %s", errorMessage, err)
 	}
 
-	// Set EDITOR env var
-	originalEditorEnvVar := os.Getenv("EDITOR")
-	err = os.Setenv("EDITOR", editor)
-	if err != nil {
-		t.Fatalf("%s: Failed to set EDITOR env var: %s", errorMessage, err)
-	}
-
-	// Set Git default branch
-	var cmdOutputBuffer bytes.Buffer
-	cmd := exec.Command("git", "config", "--global", "init.defaultBranch")
-	cmd.Stdout = &cmdOutputBuffer
-	originalGitDefaultBranch := ""
-	if err = cmd.Run(); err != nil {
-		// Expected if default branch is not set
-	} else {
-		originalGitDefaultBranch = strings.TrimSpace(cmdOutputBuffer.String())
-	}
-	cmd = exec.Command("git", "config", "--global", "init.defaultBranch", "main")
-	if err = cmd.Run(); err != nil {
-		t.Fatalf("%s: Unable to set Git default branch: %s", errorMessage, err)
-	}
-
-	result := runTestCaseSetUpData{
-		tempTestDir:              tempTestDir,
-		originalFilePath:         originalFilePath,
-		originalEditorEnvVar:     originalEditorEnvVar,
-		originalGitDefaultBranch: originalGitDefaultBranch,
+	result := testRunTestCaseSetUpData{
+		tempTestDir:      tempTestDir,
+		originalFilePath: originalFilePath,
 	}
 	return result
 }
 
-func runTestCaseTearDown(t *testing.T, setUpData runTestCaseSetUpData) {
-	errorMessage := "Failure during teardown"
-
-	// Set Git default branch to original value
-	cmd := exec.Command("git", "config", "--global", "init.defaultBranch", setUpData.originalGitDefaultBranch)
-	if setUpData.originalGitDefaultBranch == "" {
-		cmd = exec.Command("git", "config", "--global", "--unset", "init.defaultBranch")
-	}
-	if err := cmd.Run(); err != nil {
-		t.Errorf("%s: Unable to reset Git default branch setting (%s): %s", errorMessage, setUpData.originalGitDefaultBranch, err)
-	}
-
-	// Set EDITOR env var to original value
-	err := os.Setenv("EDITOR", setUpData.originalEditorEnvVar)
-	if err != nil {
-		t.Errorf("%s: Failed to set EDITOR env var to the original value (%s): %s", errorMessage, setUpData.originalEditorEnvVar, err)
-	}
+func testRunTestCaseTearDown(t *testing.T, testCaseSetUpData testRunTestCaseSetUpData) {
+	errorMessage := "Failure during run test case teardown"
 
 	// Move to original directory
-	err = os.Chdir(setUpData.originalFilePath)
+	err := os.Chdir(testCaseSetUpData.originalFilePath)
 	if err != nil {
-		t.Fatalf("%s: Failed to change to original directory (%s): %s", errorMessage, setUpData.originalFilePath, err)
+		t.Fatalf("%s: Failed to change to original directory (%s): %s", errorMessage, testCaseSetUpData.originalFilePath, err)
 	}
 
 	// Remove temp test directory
-	err = os.RemoveAll(setUpData.tempTestDir)
+	err = os.RemoveAll(testCaseSetUpData.tempTestDir)
 	if err != nil {
-		t.Fatalf("%s: Failed to remove temp test directory (%s): %s", errorMessage, setUpData.tempTestDir, err)
+		t.Fatalf("%s: Failed to remove temp test directory (%s): %s", errorMessage, testCaseSetUpData.tempTestDir, err)
 	}
 }
 
