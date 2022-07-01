@@ -620,7 +620,7 @@ func testRunTestCase(t *testing.T, tc testRunTestCaseData) {
 	defer func() {
 		err = os.Chdir(cwd)
 		if err != nil {
-			t.Fatal(err) // TODO: Maybe don't make this Fatal? Will it get in the way of other goroutines from cleaning up?
+			t.Fatal(err)
 		}
 	}()
 
