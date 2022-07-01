@@ -572,12 +572,12 @@ func testRunTestCase(t *testing.T, tc testRunTestCaseData) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	defer func() {
+	t.Cleanup(func() {
 		err = os.Chdir(cwd)
 		if err != nil {
 			t.Fatal(err)
 		}
-	}()
+	})
 
 	var outputBuffer bytes.Buffer
 	var errorOutputBuffer bytes.Buffer
