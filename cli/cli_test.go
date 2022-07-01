@@ -418,50 +418,6 @@ func TestRun(t *testing.T) {
 			},
 		},
 		{
-			args: []string{"--git", "--nova", "github.com/foo/bar"},
-			expectedOutput: fmt.Sprintf("Creating Go module: github.com/foo/bar\n"+
-				"- Created directory: bar\n"+
-				"- Initialized Go module\n"+
-				"- Created file     : bar/main.go\n"+
-				"- Created directory: bar/.nova\n"+
-				"- Created directory: bar/.nova/Tasks\n"+
-				"- Created file     : bar/.nova/Tasks/Go.json\n"+
-				"- Initialized Git repository\n"+
-				"- Created file     : bar/.gitignore\n"+
-				"- Created file     : bar/README.md\n"+
-				"- Committed all files to Git repository\n"+
-				"- Added remote for Git repository: git@github.com:foo/bar.git\n"+
-				"\n"+
-				"Finished creating Go module: github.com/foo/bar\n"+
-				"\n"+
-				"Next steps:\n"+
-				"- Create remote Git repository git@github.com:foo/bar.git: https://github.com/new\n"+
-				"- Push to remote Git repository: $ git push -u origin %s\n"+
-				"- Start coding: $ nova bar\n",
-				gitBranchName,
-			),
-			expectedErrorOutput: "",
-			expectedExitCode:    0,
-			expectedFiles: &file{"bar", dirPerms, nil, []file{
-				{"go.mod", filePerms, []byte("module github.com/foo/bar\n\ngo 1.18\n"), nil},
-				{"main.go", filePerms, []byte(mainGoContents), nil},
-				{".git", dirPerms, nil, nil},
-				{".gitignore", filePerms, []byte("bar"), nil},
-				{"README.md", filePerms, []byte("# bar\n\n"), nil},
-				{".nova", dirPerms, nil, []file{
-					{"Tasks", dirPerms, nil, []file{
-						{"Go.json", filePerms, []byte(novaTaskContents), nil},
-					}},
-				}},
-			}},
-			expectedGitRepo: &gitRepo{
-				"bar",
-				gitBranchName,
-				[]string{"Initial commit"},
-				ptr("git@github.com:foo/bar.git"),
-			},
-		},
-		{
 			args: []string{"-g", "-n", "github.com/foo/bar"},
 			expectedOutput: fmt.Sprintf("Creating Go module: github.com/foo/bar\n"+
 				"- Created directory: bar\n"+
