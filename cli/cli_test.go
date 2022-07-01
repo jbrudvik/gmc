@@ -556,7 +556,6 @@ func TestRun(t *testing.T) {
 	for _, tc := range tests {
 		testName := strings.Join(tc.args, " ")
 		t.Run(testName, func(t *testing.T) {
-			// t.Parallel()
 			testRunTestCase(t, tc)
 		})
 	}
