@@ -139,14 +139,10 @@ func createModule(module string, createAsGitRepo bool, extraDirs []string, outpu
 		return err
 	}
 	reportCreatedDir(output, moduleBase)
-	err = os.Chdir(moduleBase)
-	if err != nil {
-		return err
-	}
-	defer os.Chdir("..")
 
 	// Create go.mod
 	cmd := exec.Command("go", "mod", "init", module)
+	cmd.Dir = moduleBase
 	if err = cmd.Run(); err != nil {
 		return err
 	}
@@ -169,32 +165,37 @@ func createModule(module string, createAsGitRepo bool, extraDirs []string, outpu
 	if createAsGitRepo {
 		// Initialize Git repository
 		cmd := exec.Command("git", "init")
+		cmd.Dir = moduleBase
 		if err = cmd.Run(); err != nil {
 			return errors.New("Failed to initialize Git repository")
 		}
 		fmt.Fprintln(output, "- Initialized Git repository")
 
 		// Create .gitignore
-		err = os.WriteFile(gitignoreFileName, []byte(moduleBase), 0644)
+		gitignoreFilePath := filepath.Join(moduleBase, gitignoreFileName)
+		err = os.WriteFile(gitignoreFilePath, []byte(moduleBase), 0644)
 		if err != nil {
 			return err
 		}
-		reportCreatedFile(output, moduleBase, gitignoreFileName)
+		reportCreatedFile(output, gitignoreFilePath)
 
 		// Create README.md (with title)
+		readmeFilePath := filepath.Join(moduleBase, readmeFileName)
 		readmeContent := fmt.Sprintf("# %s\n\n", moduleBase)
-		err = os.WriteFile(readmeFileName, []byte(readmeContent), 0644)
+		err = os.WriteFile(readmeFilePath, []byte(readmeContent), 0644)
 		if err != nil {
 			return err
 		}
-		reportCreatedFile(output, moduleBase, readmeFileName)
+		reportCreatedFile(output, readmeFilePath)
 
 		// Commit all files to Git repository
 		cmd = exec.Command("git", "add", ".")
+		cmd.Dir = moduleBase
 		if err = cmd.Run(); err != nil {
 			return errors.New("Failed to stage files for Git commit")
 		}
 		cmd = exec.Command("git", "commit", "-m", "Initial commit")
+		cmd.Dir = moduleBase
 		if err = cmd.Run(); err != nil {
 			return errors.New("Failed to commit files into Git repository")
 		}
@@ -206,6 +207,7 @@ func createModule(module string, createAsGitRepo bool, extraDirs []string, outpu
 		if gitUrlCore != module {
 			gitUrl = fmt.Sprintf("git@%s.git", gitUrlCore)
 			cmd = exec.Command("git", "remote", "add", "origin", gitUrl)
+			cmd.Dir = moduleBase
 			if err = cmd.Run(); err != nil {
 				return errors.New("Failed to stage files for Git commit")
 			}
@@ -227,6 +229,7 @@ func createModule(module string, createAsGitRepo bool, extraDirs []string, outpu
 		// Add next step: Push to remote
 		var cmdOutputBuffer bytes.Buffer
 		cmd = exec.Command("git", "symbolic-ref", "--short", "HEAD")
+		cmd.Dir = moduleBase
 		cmd.Stdout = &cmdOutputBuffer
 		_ = cmd.Run()
 		cmdOutput := strings.TrimSpace(cmdOutputBuffer.String())
@@ -280,15 +283,15 @@ func copyEmbeddedFS(srcFS embed.FS, src string, moduleBase string, output io.Wri
 			return nil
 		}
 
-		dstPath := withoutFilepathPrefix(srcPath, srcRoot)
+		dstPath := filepath.Join(moduleBase, withoutFilepathPrefix(srcPath, srcRoot))
 
 		if entry.IsDir() {
 			// Create dir
-			err = os.Mkdir(filepath.Join(".", dstPath), 0755)
+			err = os.Mkdir(dstPath, 0755)
 			if err != nil {
 				return err
 			}
-			reportCreatedDir(output, moduleBase, dstPath)
+			reportCreatedDir(output, dstPath)
 		} else {
 			// Copy file
 			fileBytes, err := fs.ReadFile(srcFS, srcPath)
@@ -299,7 +302,7 @@ func copyEmbeddedFS(srcFS embed.FS, src string, moduleBase string, output io.Wri
 			if err != nil {
 				return err
 			}
-			reportCreatedFile(output, moduleBase, dstPath)
+			reportCreatedFile(output, dstPath)
 		}
 
 		return nil
@@ -312,20 +315,16 @@ func copyEmbeddedFS(srcFS embed.FS, src string, moduleBase string, output io.Wri
 	return nil
 }
 
-func reportCreatedAtPath(output io.Writer, fileType string, filePath string, filePathComponents ...string) {
-	fullPath := filePath
-	for _, filePathComponent := range filePathComponents {
-		fullPath = filepath.Join(fullPath, filePathComponent)
-	}
-	fmt.Fprintln(output, fmt.Sprintf("- Created %-9s: %s", fileType, fullPath))
+func reportCreatedAtPath(output io.Writer, fileType string, filePath string) {
+	fmt.Fprintln(output, fmt.Sprintf("- Created %-9s: %s", fileType, filePath))
 }
 
-func reportCreatedDir(output io.Writer, filePath string, filePathComponents ...string) {
-	reportCreatedAtPath(output, "directory", filePath, filePathComponents...)
+func reportCreatedDir(output io.Writer, filePath string) {
+	reportCreatedAtPath(output, "directory", filePath)
 }
 
-func reportCreatedFile(output io.Writer, filePath string, filePathComponents ...string) {
-	reportCreatedAtPath(output, "file", filePath, filePathComponents...)
+func reportCreatedFile(output io.Writer, filePath string) {
+	reportCreatedAtPath(output, "file", filePath)
 }
 
 func withoutFilepathPrefix(filePath string, filePathPrefix string) string {

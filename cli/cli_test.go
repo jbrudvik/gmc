@@ -599,7 +599,8 @@ func runTestCase(t *testing.T, tc runTestCaseData) {
 		}
 	}
 	app := cli.AppWithCustomOutputAndExit(&outputBuffer, &errorOutputBuffer, exitCodeHandler)
-	_ = app.Run(append([]string{cli.Name}, tc.args...))
+	args := append([]string{cli.Name}, tc.args...)
+	_ = app.Run(args)
 	actualOutput := outputBuffer.String()
 	actualErrorOutput := errorOutputBuffer.String()
 
@@ -807,34 +808,12 @@ func assertExpectedFileIsAtPath(t *testing.T, input string, f file, filePath str
 }
 
 func assertExpectedGitRepoExists(t *testing.T, input string, expectedGitRepo gitRepo) {
-	// Change into module directory and back out to original directory afterward
-	errorMessage := "Failure while asserting expected Git repository correct"
-	originalFilePath, err := os.Getwd()
-	if err != nil {
-		panic(fmt.Sprintf("%s: Failed to get current working directory: %s", errorMessage, err))
-	}
-	_, err = os.Stat(expectedGitRepo.dir)
-	if err != nil {
-		errorMessage := fmt.Sprintf("Unable to stat expected Git repository: %s", expectedGitRepo.dir)
-		t.Error(testInputUnexpectedMessage(input, errorMessage))
-		return
-	}
-	err = os.Chdir(expectedGitRepo.dir)
-	if err != nil {
-		panic(fmt.Sprintf("%s: Failed to change into module directory (%s): %s", errorMessage, expectedGitRepo.dir, err))
-	}
-	defer func() {
-		err = os.Chdir(originalFilePath)
-		if err != nil {
-			panic(fmt.Sprintf("%s: Failed to move to original directory (%s): %s", errorMessage, originalFilePath, err))
-		}
-	}()
-
 	// Assert all files have been committed to Git repository
 	var cmdOutputBuffer bytes.Buffer
 	cmd := exec.Command("git", "status", "-s")
+	cmd.Dir = expectedGitRepo.dir
 	cmd.Stdout = &cmdOutputBuffer
-	if err = cmd.Run(); err != nil {
+	if err := cmd.Run(); err != nil {
 		errorMessage := fmt.Sprintf("Unable to view Git status in %s:", expectedGitRepo.dir)
 		t.Error(testInputUnexpectedMessage(input, errorMessage))
 		return
@@ -848,8 +827,9 @@ func assertExpectedGitRepoExists(t *testing.T, input string, expectedGitRepo git
 	// Assert Git repository has expected commit history
 	cmdOutputBuffer = bytes.Buffer{}
 	cmd = exec.Command("git", "log", "--pretty=%s")
+	cmd.Dir = expectedGitRepo.dir
 	cmd.Stdout = &cmdOutputBuffer
-	if err = cmd.Run(); err != nil {
+	if err := cmd.Run(); err != nil {
 		errorMessage := fmt.Sprintf("Unable to view Git commit history in %s:", expectedGitRepo.dir)
 		t.Error(testInputUnexpectedMessage(input, errorMessage))
 		return
@@ -864,9 +844,10 @@ func assertExpectedGitRepoExists(t *testing.T, input string, expectedGitRepo git
 	// Assert expected Git remote
 	cmdOutputBuffer = bytes.Buffer{}
 	cmd = exec.Command("git", "remote", "get-url", "origin")
+	cmd.Dir = expectedGitRepo.dir
 	cmd.Stdout = &cmdOutputBuffer
 	var actualGitRemote *string = nil
-	if err = cmd.Run(); err != nil {
+	if err := cmd.Run(); err != nil {
 		// Expected when no remote set
 	}
 	cmdOutput = strings.TrimSpace(cmdOutputBuffer.String())
