@@ -12,7 +12,7 @@ $ go install github.com/jbrudvik/gmc@latest
 
 ```
 $ gmc -g github.com/jbrudvik/foo
-Creating Go module "github.com/jbrudvik/foo"...
+Creating Go module: github.com/jbrudvik/foo
 - Created directory: foo
 - Initialized Go module
 - Created file     : foo/main.go
@@ -22,7 +22,7 @@ Creating Go module "github.com/jbrudvik/foo"...
 - Committed all files to Git repository
 - Added remote for Git repository: git@github.com:jbrudvik/foo.git
 
-Finished creating Go module "github.com/jbrudvik/foo"
+Finished creating Go module: github.com/jbrudvik/foo
 
 Next steps:
 - Create remote Git repository git@github.com:jbrudvik/foo.git: https://github.com/new

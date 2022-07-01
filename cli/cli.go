@@ -125,7 +125,7 @@ func AppWithCustomAll(output io.Writer, errorOutput io.Writer, exitCodeHandler f
 				// Create module
 				err := createModule(module, repo, extraDirs, output)
 				if err != nil {
-					errorMessage := fmt.Sprintf("Failed to create Go module \"%s\": %s", module, err)
+					errorMessage := fmt.Sprintf("Failed to create Go module: %s: %s", module, err)
 					return errors.New(errorMessage)
 				}
 			}
@@ -135,7 +135,7 @@ func AppWithCustomAll(output io.Writer, errorOutput io.Writer, exitCodeHandler f
 }
 
 func createModule(module string, repo *gitRepo, extraDirs []string, output io.Writer) error {
-	fmt.Fprintf(output, "Creating Go module \"%s\"...\n", module)
+	fmt.Fprintf(output, "Creating Go module: %s\n", module)
 
 	moduleBase := filepath.Base(module)
 	nextSteps := []string{}
@@ -253,7 +253,7 @@ func createModule(module string, repo *gitRepo, extraDirs []string, output io.Wr
 	}
 
 	// Output success
-	successMessage := fmt.Sprintf("\nFinished creating Go module \"%s\"", module)
+	successMessage := fmt.Sprintf("\nFinished creating Go module: %s", module)
 	fmt.Fprintln(output, successMessage)
 
 	// Add next step: Start coding!

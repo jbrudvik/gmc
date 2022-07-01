@@ -198,12 +198,12 @@ func TestRun(t *testing.T) {
 		},
 		{
 			args: []string{"a1"},
-			expectedOutput: fmt.Sprintf("Creating Go module \"a1\"...\n"+
+			expectedOutput: fmt.Sprintf("Creating Go module: a1\n"+
 				"- Created directory: a1\n"+
 				"- Initialized Go module\n"+
 				"- Created file     : a1/main.go\n"+
 				"\n"+
-				"Finished creating Go module \"a1\"\n"+
+				"Finished creating Go module: a1\n"+
 				"\n"+
 				"Next steps:\n"+
 				"- Start coding: $ %s a1\n",
@@ -218,7 +218,7 @@ func TestRun(t *testing.T) {
 		},
 		{
 			args: []string{"-n", "a2"},
-			expectedOutput: "Creating Go module \"a2\"...\n" +
+			expectedOutput: "Creating Go module: a2\n" +
 				"- Created directory: a2\n" +
 				"- Initialized Go module\n" +
 				"- Created file     : a2/main.go\n" +
@@ -226,7 +226,7 @@ func TestRun(t *testing.T) {
 				"- Created directory: a2/.nova/Tasks\n" +
 				"- Created file     : a2/.nova/Tasks/Go.json\n" +
 				"\n" +
-				"Finished creating Go module \"a2\"\n" +
+				"Finished creating Go module: a2\n" +
 				"\n" +
 				"Next steps:\n" +
 				"- Start coding: $ nova a2\n",
@@ -245,7 +245,7 @@ func TestRun(t *testing.T) {
 		},
 		{
 			args: []string{"--nova", "a3"},
-			expectedOutput: "Creating Go module \"a3\"...\n" +
+			expectedOutput: "Creating Go module: a3\n" +
 				"- Created directory: a3\n" +
 				"- Initialized Go module\n" +
 				"- Created file     : a3/main.go\n" +
@@ -253,7 +253,7 @@ func TestRun(t *testing.T) {
 				"- Created directory: a3/.nova/Tasks\n" +
 				"- Created file     : a3/.nova/Tasks/Go.json\n" +
 				"\n" +
-				"Finished creating Go module \"a3\"\n" +
+				"Finished creating Go module: a3\n" +
 				"\n" +
 				"Next steps:\n" +
 				"- Start coding: $ nova a3\n",
@@ -272,12 +272,12 @@ func TestRun(t *testing.T) {
 		},
 		{
 			args: []string{"github.com/foo"},
-			expectedOutput: fmt.Sprintf("Creating Go module \"github.com/foo\"...\n"+
+			expectedOutput: fmt.Sprintf("Creating Go module: github.com/foo\n"+
 				"- Created directory: foo\n"+
 				"- Initialized Go module\n"+
 				"- Created file     : foo/main.go\n"+
 				"\n"+
-				"Finished creating Go module \"github.com/foo\"\n"+
+				"Finished creating Go module: github.com/foo\n"+
 				"\n"+
 				"Next steps:\n"+
 				"- Start coding: $ %s foo\n",
@@ -292,7 +292,7 @@ func TestRun(t *testing.T) {
 		},
 		{
 			args: []string{"--nova", "github.com/foo/bar"},
-			expectedOutput: "Creating Go module \"github.com/foo/bar\"...\n" +
+			expectedOutput: "Creating Go module: github.com/foo/bar\n" +
 				"- Created directory: bar\n" +
 				"- Initialized Go module\n" +
 				"- Created file     : bar/main.go\n" +
@@ -300,7 +300,7 @@ func TestRun(t *testing.T) {
 				"- Created directory: bar/.nova/Tasks\n" +
 				"- Created file     : bar/.nova/Tasks/Go.json\n" +
 				"\n" +
-				"Finished creating Go module \"github.com/foo/bar\"\n" +
+				"Finished creating Go module: github.com/foo/bar\n" +
 				"\n" +
 				"Next steps:\n" +
 				"- Start coding: $ nova bar\n",
@@ -319,7 +319,7 @@ func TestRun(t *testing.T) {
 		},
 		{
 			args: []string{"-n", "github.com/foo/bar/baz"},
-			expectedOutput: "Creating Go module \"github.com/foo/bar/baz\"...\n" +
+			expectedOutput: "Creating Go module: github.com/foo/bar/baz\n" +
 				"- Created directory: baz\n" +
 				"- Initialized Go module\n" +
 				"- Created file     : baz/main.go\n" +
@@ -327,7 +327,7 @@ func TestRun(t *testing.T) {
 				"- Created directory: baz/.nova/Tasks\n" +
 				"- Created file     : baz/.nova/Tasks/Go.json\n" +
 				"\n" +
-				"Finished creating Go module \"github.com/foo/bar/baz\"\n" +
+				"Finished creating Go module: github.com/foo/bar/baz\n" +
 				"\n" +
 				"Next steps:\n" +
 				"- Start coding: $ nova baz\n",
@@ -346,7 +346,7 @@ func TestRun(t *testing.T) {
 		},
 		{
 			args: []string{"--git", "github.com/foo/bar"},
-			expectedOutput: fmt.Sprintf("Creating Go module \"github.com/foo/bar\"...\n"+
+			expectedOutput: fmt.Sprintf("Creating Go module: github.com/foo/bar\n"+
 				"- Created directory: bar\n"+
 				"- Initialized Go module\n"+
 				"- Created file     : bar/main.go\n"+
@@ -356,7 +356,7 @@ func TestRun(t *testing.T) {
 				"- Committed all files to Git repository\n"+
 				"- Added remote for Git repository: git@github.com:foo/bar.git\n"+
 				"\n"+
-				"Finished creating Go module \"github.com/foo/bar\"\n"+
+				"Finished creating Go module: github.com/foo/bar\n"+
 				"\n"+
 				"Next steps:\n"+
 				"- Create remote Git repository git@github.com:foo/bar.git: https://github.com/new\n"+
@@ -382,7 +382,7 @@ func TestRun(t *testing.T) {
 		},
 		{
 			args: []string{"-g", "github.com/foo/bar"},
-			expectedOutput: fmt.Sprintf("Creating Go module \"github.com/foo/bar\"...\n"+
+			expectedOutput: fmt.Sprintf("Creating Go module: github.com/foo/bar\n"+
 				"- Created directory: bar\n"+
 				"- Initialized Go module\n"+
 				"- Created file     : bar/main.go\n"+
@@ -392,7 +392,7 @@ func TestRun(t *testing.T) {
 				"- Committed all files to Git repository\n"+
 				"- Added remote for Git repository: git@github.com:foo/bar.git\n"+
 				"\n"+
-				"Finished creating Go module \"github.com/foo/bar\"\n"+
+				"Finished creating Go module: github.com/foo/bar\n"+
 				"\n"+
 				"Next steps:\n"+
 				"- Create remote Git repository git@github.com:foo/bar.git: https://github.com/new\n"+
@@ -419,7 +419,7 @@ func TestRun(t *testing.T) {
 		},
 		{
 			args: []string{"--git", "--nova", "github.com/foo/bar"},
-			expectedOutput: fmt.Sprintf("Creating Go module \"github.com/foo/bar\"...\n"+
+			expectedOutput: fmt.Sprintf("Creating Go module: github.com/foo/bar\n"+
 				"- Created directory: bar\n"+
 				"- Initialized Go module\n"+
 				"- Created file     : bar/main.go\n"+
@@ -432,7 +432,7 @@ func TestRun(t *testing.T) {
 				"- Committed all files to Git repository\n"+
 				"- Added remote for Git repository: git@github.com:foo/bar.git\n"+
 				"\n"+
-				"Finished creating Go module \"github.com/foo/bar\"\n"+
+				"Finished creating Go module: github.com/foo/bar\n"+
 				"\n"+
 				"Next steps:\n"+
 				"- Create remote Git repository git@github.com:foo/bar.git: https://github.com/new\n"+
@@ -463,7 +463,7 @@ func TestRun(t *testing.T) {
 		},
 		{
 			args: []string{"-g", "-n", "github.com/foo/bar"},
-			expectedOutput: fmt.Sprintf("Creating Go module \"github.com/foo/bar\"...\n"+
+			expectedOutput: fmt.Sprintf("Creating Go module: github.com/foo/bar\n"+
 				"- Created directory: bar\n"+
 				"- Initialized Go module\n"+
 				"- Created file     : bar/main.go\n"+
@@ -476,7 +476,7 @@ func TestRun(t *testing.T) {
 				"- Committed all files to Git repository\n"+
 				"- Added remote for Git repository: git@github.com:foo/bar.git\n"+
 				"\n"+
-				"Finished creating Go module \"github.com/foo/bar\"\n"+
+				"Finished creating Go module: github.com/foo/bar\n"+
 				"\n"+
 				"Next steps:\n"+
 				"- Create remote Git repository git@github.com:foo/bar.git: https://github.com/new\n"+
@@ -507,7 +507,7 @@ func TestRun(t *testing.T) {
 		},
 		{
 			args: []string{"--git", "--nova", "foo"},
-			expectedOutput: fmt.Sprintf("Creating Go module \"foo\"...\n"+
+			expectedOutput: fmt.Sprintf("Creating Go module: foo\n"+
 				"- Created directory: foo\n"+
 				"- Initialized Go module\n"+
 				"- Created file     : foo/main.go\n"+
@@ -520,7 +520,7 @@ func TestRun(t *testing.T) {
 				"- Committed all files to Git repository\n"+
 				"- NOTE: Unable to add remote for Git repository\n"+
 				"\n"+
-				"Finished creating Go module \"foo\"\n"+
+				"Finished creating Go module: foo\n"+
 				"\n"+
 				"Next steps:\n"+
 				"- Create remote Git repository\n"+
@@ -551,7 +551,7 @@ func TestRun(t *testing.T) {
 		},
 		{
 			args: []string{"--git", "--nova", "example.com/foo/bar"},
-			expectedOutput: fmt.Sprintf("Creating Go module \"example.com/foo/bar\"...\n"+
+			expectedOutput: fmt.Sprintf("Creating Go module: example.com/foo/bar\n"+
 				"- Created directory: bar\n"+
 				"- Initialized Go module\n"+
 				"- Created file     : bar/main.go\n"+
@@ -564,7 +564,7 @@ func TestRun(t *testing.T) {
 				"- Committed all files to Git repository\n"+
 				"- Added remote for Git repository: git@example.com:foo/bar.git\n"+
 				"\n"+
-				"Finished creating Go module \"example.com/foo/bar\"\n"+
+				"Finished creating Go module: example.com/foo/bar\n"+
 				"\n"+
 				"Next steps:\n"+
 				"- Create remote Git repository git@example.com:foo/bar.git\n"+
