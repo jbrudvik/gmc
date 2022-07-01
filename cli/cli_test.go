@@ -580,7 +580,10 @@ func TestRun(t *testing.T) {
 	}
 
 	for _, tc := range tests {
-		runTestCase(t, tc)
+		testName := strings.Join(tc.args, " ")
+		t.Run(testName, func(t *testing.T) {
+			runTestCase(t, tc)
+		})
 	}
 }
 
@@ -588,14 +591,12 @@ func runTestCase(t *testing.T, tc runTestCaseData) {
 	setUpData := runTestCaseSetUp(t)
 	defer runTestCaseTearDown(t, setUpData)
 
-	input := fmt.Sprintf("%s", tc.args)
-
 	var outputBuffer bytes.Buffer
 	var errorOutputBuffer bytes.Buffer
 	exitCodeHandler := func(exitCode int) {
 		// Test: Exit code
 		if tc.expectedExitCode != exitCode {
-			t.Errorf(testCaseUnexpectedMessage(input, "exit code", tc.expectedExitCode, exitCode))
+			t.Errorf(testCaseUnexpectedMessage("exit code", tc.expectedExitCode, exitCode))
 		}
 	}
 	app := cli.AppWithCustomOutputAndExit(&outputBuffer, &errorOutputBuffer, exitCodeHandler)
@@ -606,20 +607,20 @@ func runTestCase(t *testing.T, tc runTestCaseData) {
 
 	// Test: Output
 	if actualOutput != tc.expectedOutput {
-		t.Error(testCaseUnexpectedMessage(input, "output", tc.expectedOutput, actualOutput))
+		t.Error(testCaseUnexpectedMessage("output", tc.expectedOutput, actualOutput))
 	}
 
 	// Test: Error output
 	if actualErrorOutput != tc.expectedErrorOutput {
-		t.Error(testCaseUnexpectedMessage(input, "error output", tc.expectedErrorOutput, actualErrorOutput))
+		t.Error(testCaseUnexpectedMessage("error output", tc.expectedErrorOutput, actualErrorOutput))
 	}
 
 	// Test: Files created
-	assertExpectedFilesExist(t, input, tc.expectedFiles)
+	assertExpectedFilesExist(t, tc.expectedFiles)
 
 	// Test: Git
 	if tc.expectedGitRepo != nil {
-		assertExpectedGitRepoExists(t, input, *tc.expectedGitRepo)
+		assertExpectedGitRepoExists(t, *tc.expectedGitRepo)
 	}
 }
 
@@ -629,24 +630,24 @@ func runTestCaseSetUp(t *testing.T) runTestCaseSetUpData {
 	// Get current working directory
 	originalFilePath, err := os.Getwd()
 	if err != nil {
-		panic(fmt.Sprintf("%s: Failed to get current working directory: %s", errorMessage, err))
+		t.Fatalf("%s: Failed to get current working directory: %s", errorMessage, err)
 	}
 
 	// Create temp test directory
 	tempTestDir, err := os.MkdirTemp(".", "cli_test_dir")
 	if err != nil {
-		panic(fmt.Sprintf("%s: Failed to create test directory: %s", errorMessage, err))
+		t.Fatalf("%s: Failed to create test directory: %s", errorMessage, err)
 	}
 	err = os.Chdir(tempTestDir)
 	if err != nil {
-		panic(fmt.Sprintf("%s: Failed to change into test directory: %s", errorMessage, err))
+		t.Fatalf("%s: Failed to change into test directory: %s", errorMessage, err)
 	}
 
 	// Set EDITOR env var
 	originalEditorEnvVar := os.Getenv("EDITOR")
 	err = os.Setenv("EDITOR", editor)
 	if err != nil {
-		panic(fmt.Sprintf("%s: Failed to set EDITOR env var: %s", errorMessage, err))
+		t.Fatalf("%s: Failed to set EDITOR env var: %s", errorMessage, err)
 	}
 
 	// Set Git default branch
@@ -661,7 +662,7 @@ func runTestCaseSetUp(t *testing.T) runTestCaseSetUpData {
 	}
 	cmd = exec.Command("git", "config", "--global", "init.defaultBranch", "main")
 	if err = cmd.Run(); err != nil {
-		panic(fmt.Sprintf("%s: Unable to set Git default branch: %s", errorMessage, err))
+		t.Fatalf("%s: Unable to set Git default branch: %s", errorMessage, err)
 	}
 
 	result := runTestCaseSetUpData{
@@ -682,29 +683,29 @@ func runTestCaseTearDown(t *testing.T, setUpData runTestCaseSetUpData) {
 		cmd = exec.Command("git", "config", "--global", "--unset", "init.defaultBranch")
 	}
 	if err := cmd.Run(); err != nil {
-		t.Error(fmt.Sprintf("%s: Unable to reset Git default branch setting (%s): %s", errorMessage, setUpData.originalGitDefaultBranch, err))
+		t.Errorf("%s: Unable to reset Git default branch setting (%s): %s", errorMessage, setUpData.originalGitDefaultBranch, err)
 	}
 
 	// Set EDITOR env var to original value
 	err := os.Setenv("EDITOR", setUpData.originalEditorEnvVar)
 	if err != nil {
-		t.Error(fmt.Sprintf("%s: Failed to set EDITOR env var to the original value (%s): %s", errorMessage, setUpData.originalEditorEnvVar, err))
+		t.Errorf("%s: Failed to set EDITOR env var to the original value (%s): %s", errorMessage, setUpData.originalEditorEnvVar, err)
 	}
 
 	// Move to original directory
 	err = os.Chdir(setUpData.originalFilePath)
 	if err != nil {
-		panic(fmt.Sprintf("%s: Failed to change to original directory (%s): %s", errorMessage, setUpData.originalFilePath, err))
+		t.Fatalf("%s: Failed to change to original directory (%s): %s", errorMessage, setUpData.originalFilePath, err)
 	}
 
 	// Remove temp test directory
 	err = os.RemoveAll(setUpData.tempTestDir)
 	if err != nil {
-		panic(fmt.Sprintf("%s: Failed to remove temp test directory (%s): %s", errorMessage, setUpData.tempTestDir, err))
+		t.Fatalf("%s: Failed to remove temp test directory (%s): %s", errorMessage, setUpData.tempTestDir, err)
 	}
 }
 
-func assertExpectedFilesExist(t *testing.T, input string, expectedFiles *file) {
+func assertExpectedFilesExist(t *testing.T, expectedFiles *file) {
 	cwd, err := os.Getwd()
 	if err != nil {
 		t.Error("Could not get cwd", err)
@@ -712,21 +713,19 @@ func assertExpectedFilesExist(t *testing.T, input string, expectedFiles *file) {
 	if expectedFiles != nil {
 		walkDir(*expectedFiles, cwd, func(f file, root string) {
 			filePath := filepath.Join(root, f.name)
-			assertExpectedFileIsAtPath(t, input, f, filePath)
+			assertExpectedFileIsAtPath(t, f, filePath)
 		})
 	} else {
 		actualEntries, err := os.ReadDir(cwd)
 		if err != nil {
-			errorMessage := fmt.Sprintf("Unable to read current directory: %s", cwd)
-			t.Error(testInputUnexpectedMessage(input, errorMessage))
+			t.Errorf("Unable to read current directory: %s", cwd)
 		} else {
 			if len(actualEntries) > 0 {
 				fileNames := []string{}
 				for _, actualEntry := range actualEntries {
 					fileNames = append(fileNames, actualEntry.Name())
 				}
-				errorMessage := fmt.Sprintf("Files were created when none were expected: %v", fileNames)
-				t.Error(testInputUnexpectedMessage(input, errorMessage))
+				t.Errorf("Files were created when none were expected: %v", fileNames)
 			}
 		}
 	}
@@ -743,40 +742,35 @@ func walkDir(f file, root string, fn func(file, string)) {
 	}
 }
 
-func assertExpectedFileIsAtPath(t *testing.T, input string, f file, filePath string) {
+func assertExpectedFileIsAtPath(t *testing.T, f file, filePath string) {
 	fileInfo, err := os.Stat(filePath)
 	if err != nil {
-		errorMessage := fmt.Sprintf("Unable to stat expected file: %s", filePath)
-		t.Error(testInputUnexpectedMessage(input, errorMessage))
+		t.Errorf("Unable to stat expected file: %s", filePath)
 		return
 	}
 
 	actualMode := fileInfo.Mode()
 	if f.perm != actualMode {
-		errorMessage := testResultUnexpectedMessage(fmt.Sprintf("file perms at path: %s", filePath), f.perm, actualMode)
-		t.Error(errorMessage)
+		t.Error(testCaseUnexpectedMessage(fmt.Sprintf("file perms at path: %s", filePath), f.perm, actualMode))
 	}
 
 	if f.content != nil {
 		// Compare files
 		bytes, err := os.ReadFile(filePath)
 		if err != nil {
-			errorMessage := fmt.Sprintf("Unable to read expected file: %s", filePath)
-			t.Error(testInputUnexpectedMessage(input, errorMessage))
+			t.Errorf("Unable to read expected file: %s", filePath)
 		} else {
 			expectedFileContent := string(f.content)
 			actualFileContent := string(bytes)
 			if expectedFileContent != actualFileContent {
-				errorMessage := testResultUnexpectedMessage(fmt.Sprintf("file content at path: %s", filePath), expectedFileContent, actualFileContent)
-				t.Error(testInputUnexpectedMessage(input, errorMessage))
+				t.Error(testCaseUnexpectedMessage(fmt.Sprintf("file content at path: %s", filePath), expectedFileContent, actualFileContent))
 			}
 		}
 	} else {
 		// Compare dirs
 		actualEntries, err := os.ReadDir(filePath)
 		if err != nil {
-			errorMessage := fmt.Sprintf("Unable to read expected directory: %s", filePath)
-			t.Error(errorMessage)
+			t.Errorf("Unable to read expected directory: %s", filePath)
 		} else {
 			expectedEntriesExist := map[string]bool{}
 
@@ -789,8 +783,7 @@ func assertExpectedFileIsAtPath(t *testing.T, input string, f file, filePath str
 					actualFileName := actualEntry.Name()
 					_, ok := expectedEntriesExist[actualFileName]
 					if !ok {
-						errorMessage := fmt.Sprintf("Unexpected file exists: %s", filepath.Join(filePath, actualFileName))
-						t.Error(testInputUnexpectedMessage(input, errorMessage))
+						t.Errorf(fmt.Sprintf("Unexpected file exists: %s", filepath.Join(filePath, actualFileName)))
 					} else {
 						expectedEntriesExist[actualFileName] = true
 					}
@@ -798,8 +791,7 @@ func assertExpectedFileIsAtPath(t *testing.T, input string, f file, filePath str
 
 				for fileName, wasFound := range expectedEntriesExist {
 					if !wasFound {
-						errorMessage := fmt.Sprintf("Expected file not found: %s", filepath.Join(filePath, fileName))
-						t.Error(testInputUnexpectedMessage(input, errorMessage))
+						t.Errorf("Expected file not found: %s", filepath.Join(filePath, fileName))
 					}
 				}
 			}
@@ -807,21 +799,19 @@ func assertExpectedFileIsAtPath(t *testing.T, input string, f file, filePath str
 	}
 }
 
-func assertExpectedGitRepoExists(t *testing.T, input string, expectedGitRepo gitRepo) {
+func assertExpectedGitRepoExists(t *testing.T, expectedGitRepo gitRepo) {
 	// Assert all files have been committed to Git repository
 	var cmdOutputBuffer bytes.Buffer
 	cmd := exec.Command("git", "status", "-s")
 	cmd.Dir = expectedGitRepo.dir
 	cmd.Stdout = &cmdOutputBuffer
 	if err := cmd.Run(); err != nil {
-		errorMessage := fmt.Sprintf("Unable to view Git status in %s:", expectedGitRepo.dir)
-		t.Error(testInputUnexpectedMessage(input, errorMessage))
+		t.Errorf("Unable to view Git status in %s:", expectedGitRepo.dir)
 		return
 	}
 	cmdOutput := strings.TrimSpace(cmdOutputBuffer.String())
 	if cmdOutput != "" {
-		errorMessage := fmt.Sprintf("Not all files committed to Git repository: %s", cmdOutput)
-		t.Error(testInputUnexpectedMessage(input, errorMessage))
+		t.Errorf("Not all files committed to Git repository: %s", cmdOutput)
 	}
 
 	// Assert Git repository has expected commit history
@@ -830,15 +820,13 @@ func assertExpectedGitRepoExists(t *testing.T, input string, expectedGitRepo git
 	cmd.Dir = expectedGitRepo.dir
 	cmd.Stdout = &cmdOutputBuffer
 	if err := cmd.Run(); err != nil {
-		errorMessage := fmt.Sprintf("Unable to view Git commit history in %s:", expectedGitRepo.dir)
-		t.Error(testInputUnexpectedMessage(input, errorMessage))
+		t.Errorf("Unable to view Git commit history in %s:", expectedGitRepo.dir)
 		return
 	}
 	cmdOutput = strings.TrimSpace(cmdOutputBuffer.String())
 	expectedCommitMessagesString := strings.Join(expectedGitRepo.commitMessages, "\n")
 	if expectedCommitMessagesString != cmdOutput {
-		errorMessage := testCaseUnexpectedMessage(input, "Git repository commit message history", expectedCommitMessagesString, cmdOutput)
-		t.Error(errorMessage)
+		t.Error(testCaseUnexpectedMessage("Git repository commit message history", expectedCommitMessagesString, cmdOutput))
 	}
 
 	// Assert expected Git remote
@@ -856,29 +844,17 @@ func assertExpectedGitRepoExists(t *testing.T, input string, expectedGitRepo git
 	}
 	if expectedGitRepo.remote == nil {
 		if actualGitRemote != nil {
-			errorMessage := testCaseUnexpectedMessage(input, "Git remote", expectedGitRepo.remote, actualGitRemote)
-			t.Error(errorMessage)
+			t.Error(testCaseUnexpectedMessage("Git remote", expectedGitRepo.remote, actualGitRemote))
 		}
 	} else {
 		expectedGitRemote := *expectedGitRepo.remote
 		if expectedGitRemote != cmdOutput {
-			errorMessage := testCaseUnexpectedMessage(input, "Git remote", *expectedGitRepo.remote, *actualGitRemote)
-			t.Error(errorMessage)
+			t.Error(testCaseUnexpectedMessage("Git remote", *expectedGitRepo.remote, *actualGitRemote))
 		}
 	}
 }
 
-func testCaseUnexpectedMessage[T any](input string, topic string, expected T, actual T) string {
-	testResultMessage := testResultUnexpectedMessage(topic, expected, actual)
-	testCaseMessage := testInputUnexpectedMessage(input, testResultMessage)
-	return testCaseMessage
-}
-
-func testInputUnexpectedMessage(input string, message string) string {
-	return fmt.Sprintf("Test with input %s: %s", input, message)
-}
-
-func testResultUnexpectedMessage[T any](thing string, expected T, actual T) string {
+func testCaseUnexpectedMessage[T any](thing string, expected T, actual T) string {
 	return fmt.Sprintf("Unexpected %s\nExpected: %v\nActual  : %v\n", thing, expected, actual)
 }
 
