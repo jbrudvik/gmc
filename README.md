@@ -41,7 +41,7 @@ USAGE:
    gmc [global options] [module name]
 
 VERSION:
-   v0.0.1
+   vX.Y.Z
 
 DESCRIPTION:
    `gmc [module name]` creates a directory containing:
