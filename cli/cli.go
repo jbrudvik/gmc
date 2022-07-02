@@ -16,7 +16,7 @@ import (
 )
 
 const Name string = "gmc"
-const Version string = "v0.0.4"
+const Version string = "v0.0.5"
 const Url string = "https://github.com/jbrudvik/" + Name
 
 const Description string = "`" + Name + " [module name]` creates a directory containing:\n" +
