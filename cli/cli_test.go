@@ -44,6 +44,7 @@ var helpOutput string = fmt.Sprintf("NAME:\n"+
 	"GLOBAL OPTIONS:\n"+
 	"   --git, -g      create as Git repository (default: false)\n"+
 	"   --nova, -n     include Nova configuration (default: false)\n"+
+	"   --quiet, -q    silence output (default: false)\n"+
 	"   --help, -h     show help (default: false)\n"+
 	"   --version, -v  print the version (default: false)\n",
 	cli.Name,
@@ -141,6 +142,30 @@ func TestRun(t *testing.T) {
 			expectedGitRepo:     nil,
 		},
 		{
+			args:                []string{"-q"},
+			expectedOutput:      "",
+			expectedErrorOutput: "",
+			expectedExitCode:    1,
+			expectedFiles:       nil,
+			expectedGitRepo:     nil,
+		},
+		{
+			args:                []string{"-h", "-q"},
+			expectedOutput:      helpOutput,
+			expectedErrorOutput: "",
+			expectedExitCode:    0,
+			expectedFiles:       nil,
+			expectedGitRepo:     nil,
+		},
+		{
+			args:                []string{"-v", "-q"},
+			expectedOutput:      versionOutput,
+			expectedErrorOutput: "",
+			expectedExitCode:    0,
+			expectedFiles:       nil,
+			expectedGitRepo:     nil,
+		},
+		{
 			args:                []string{"--version"},
 			expectedOutput:      versionOutput,
 			expectedErrorOutput: "",
@@ -192,6 +217,14 @@ func TestRun(t *testing.T) {
 			args:                []string{"a1", "a2"},
 			expectedOutput:      helpOutput,
 			expectedErrorOutput: errorMessageTooManyModuleNames,
+			expectedExitCode:    1,
+			expectedFiles:       nil,
+			expectedGitRepo:     nil,
+		},
+		{
+			args:                []string{"-q", "a1", "a2"},
+			expectedOutput:      "",
+			expectedErrorOutput: "",
 			expectedExitCode:    1,
 			expectedFiles:       nil,
 			expectedGitRepo:     nil,
@@ -440,6 +473,30 @@ func TestRun(t *testing.T) {
 				"- Start coding: $ nova bar\n",
 				gitBranchName,
 			),
+			expectedErrorOutput: "",
+			expectedExitCode:    0,
+			expectedFiles: &file{"bar", dirPerms, nil, []file{
+				{"go.mod", filePerms, []byte("module github.com/foo/bar\n\ngo 1.18\n"), nil},
+				{"main.go", filePerms, []byte(mainGoContents), nil},
+				{".git", dirPerms, nil, nil},
+				{".gitignore", filePerms, []byte("bar"), nil},
+				{"README.md", filePerms, []byte("# bar\n\n"), nil},
+				{".nova", dirPerms, nil, []file{
+					{"Tasks", dirPerms, nil, []file{
+						{"Go.json", filePerms, []byte(novaTaskContents), nil},
+					}},
+				}},
+			}},
+			expectedGitRepo: &gitRepo{
+				"bar",
+				gitBranchName,
+				[]string{"Initial commit"},
+				ptr("git@github.com:foo/bar.git"),
+			},
+		},
+		{
+			args:                []string{"-q", "-g", "-n", "github.com/foo/bar"},
+			expectedOutput:      "",
 			expectedErrorOutput: "",
 			expectedExitCode:    0,
 			expectedFiles: &file{"bar", dirPerms, nil, []file{

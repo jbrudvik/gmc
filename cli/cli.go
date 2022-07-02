@@ -67,12 +67,14 @@ func AppWithCustomEverything(output io.Writer, errorOutput io.Writer, exitCodeHa
 		Writer:      output,
 		ErrWriter:   errorOutput,
 		ExitErrHandler: func(c *cli.Context, err error) {
+			quiet := c.Bool("quiet")
 			if err != nil {
-				errorMessage := fmt.Sprintf("%s\n", err)
-				fmt.Fprint(errorOutput, errorMessage)
-				if c.IsSet("help") {
-					fmt.Fprint(errorOutput, "\n")
-					cli.ShowAppHelp(c)
+				flogf(errorOutput, quiet, "%s\n", err)
+				if c.Bool("help") {
+					flogln(errorOutput, quiet)
+					if !quiet {
+						cli.ShowAppHelp(c)
+					}
 				}
 				exitCodeHandler(1)
 			} else {
@@ -95,6 +97,11 @@ func AppWithCustomEverything(output io.Writer, errorOutput io.Writer, exitCodeHa
 				Usage:   "include Nova configuration",
 				Aliases: []string{"n"},
 			},
+			&cli.BoolFlag{
+				Name:    "quiet",
+				Usage:   "silence output", // Q: What about error output?
+				Aliases: []string{"q"},
+			},
 		},
 		ArgsUsage: "[module name]",
 		Action: func(c *cli.Context) error {
@@ -109,24 +116,23 @@ func AppWithCustomEverything(output io.Writer, errorOutput io.Writer, exitCodeHa
 				// Get only arg: Module name
 				module := args.First()
 
-				// Process flags
-				var extraDirs []string
-
+				// Parse flags
 				var repo *gitRepo
-				if c.Bool("nova") {
-					extraDirs = append(extraDirs, "nova")
-				}
 				if c.Bool("git") {
 					repo = &gitRepo{
 						initialBranch: gitInitialBranch,
 					}
 				}
+				var extraDirs []string
+				if c.Bool("nova") {
+					extraDirs = append(extraDirs, "nova")
+				}
+				quiet := c.Bool("quiet")
 
 				// Create module
-				err := createModule(module, repo, extraDirs, output)
+				err := createModule(module, repo, extraDirs, output, quiet)
 				if err != nil {
-					errorMessage := fmt.Sprintf("Failed to create Go module: %s: %s", module, err)
-					return errors.New(errorMessage)
+					return errors.New(fmt.Sprintf("Failed to create Go module: %s: %s", module, err))
 				}
 			}
 			return nil
@@ -134,8 +140,8 @@ func AppWithCustomEverything(output io.Writer, errorOutput io.Writer, exitCodeHa
 	}
 }
 
-func createModule(module string, repo *gitRepo, extraDirs []string, output io.Writer) error {
-	fmt.Fprintf(output, "Creating Go module: %s\n", module)
+func createModule(module string, repo *gitRepo, extraDirs []string, output io.Writer, quiet bool) error {
+	flogf(output, quiet, "Creating Go module: %s\n", module)
 
 	moduleBase := filepath.Base(module)
 	nextSteps := []string{}
@@ -145,7 +151,7 @@ func createModule(module string, repo *gitRepo, extraDirs []string, output io.Wr
 	if err != nil {
 		return err
 	}
-	reportCreatedDir(output, moduleBase)
+	reportCreatedDir(output, quiet, moduleBase)
 
 	// Create go.mod
 	cmd := exec.Command("go", "mod", "init", module)
@@ -153,17 +159,17 @@ func createModule(module string, repo *gitRepo, extraDirs []string, output io.Wr
 	if err = cmd.Run(); err != nil {
 		return err
 	}
-	fmt.Fprintln(output, "- Initialized Go module")
+	flogln(output, quiet, "- Initialized Go module")
 
 	// Copy over assets
-	err = copyEmbeddedFS(assets, assetsDefaultDir, moduleBase, output)
+	err = copyEmbeddedFS(assets, assetsDefaultDir, moduleBase, output, quiet)
 	if err != nil {
 		return err
 	}
 
 	// Copy over extras
 	for _, extraDir := range extraDirs {
-		err = copyEmbeddedFS(assets, extraDir, moduleBase, output)
+		err = copyEmbeddedFS(assets, extraDir, moduleBase, output, quiet)
 		if err != nil {
 			return err
 		}
@@ -179,7 +185,7 @@ func createModule(module string, repo *gitRepo, extraDirs []string, output io.Wr
 		if err = cmd.Run(); err != nil {
 			return errors.New("Failed to initialize Git repository")
 		}
-		fmt.Fprintln(output, "- Initialized Git repository")
+		flogln(output, quiet, "- Initialized Git repository")
 
 		// Create .gitignore
 		gitignoreFilePath := filepath.Join(moduleBase, gitignoreFileName)
@@ -187,7 +193,7 @@ func createModule(module string, repo *gitRepo, extraDirs []string, output io.Wr
 		if err != nil {
 			return err
 		}
-		reportCreatedFile(output, gitignoreFilePath)
+		reportCreatedFile(output, quiet, gitignoreFilePath)
 
 		// Create README.md (with title)
 		readmeFilePath := filepath.Join(moduleBase, readmeFileName)
@@ -196,7 +202,7 @@ func createModule(module string, repo *gitRepo, extraDirs []string, output io.Wr
 		if err != nil {
 			return err
 		}
-		reportCreatedFile(output, readmeFilePath)
+		reportCreatedFile(output, quiet, readmeFilePath)
 
 		// Commit all files to Git repository
 		cmd = exec.Command("git", "add", ".")
@@ -209,7 +215,7 @@ func createModule(module string, repo *gitRepo, extraDirs []string, output io.Wr
 		if err = cmd.Run(); err != nil {
 			return errors.New("Failed to commit files into Git repository")
 		}
-		fmt.Fprintln(output, "- Committed all files to Git repository")
+		flogln(output, quiet, "- Committed all files to Git repository")
 
 		// Add Git repository remote
 		gitUrlCore := strings.Replace(module, "/", ":", 1)
@@ -221,9 +227,9 @@ func createModule(module string, repo *gitRepo, extraDirs []string, output io.Wr
 			if err = cmd.Run(); err != nil {
 				return errors.New("Failed to stage files for Git commit")
 			}
-			fmt.Fprintf(output, "- Added remote for Git repository: %s\n", gitUrl)
+			flogf(output, quiet, "- Added remote for Git repository: %s\n", gitUrl)
 		} else {
-			fmt.Fprintln(output, "- NOTE: Unable to add remote for Git repository")
+			flogln(output, quiet, "- NOTE: Unable to add remote for Git repository")
 		}
 
 		// Add next step: Create remote repository
@@ -253,8 +259,7 @@ func createModule(module string, repo *gitRepo, extraDirs []string, output io.Wr
 	}
 
 	// Output success
-	successMessage := fmt.Sprintf("\nFinished creating Go module: %s", module)
-	fmt.Fprintln(output, successMessage)
+	flogf(output, quiet, "\nFinished creating Go module: %s\n", module)
 
 	// Add next step: Start coding!
 	editor := "$EDITOR"
@@ -272,16 +277,16 @@ func createModule(module string, repo *gitRepo, extraDirs []string, output io.Wr
 
 	// Output next steps
 	if len(nextSteps) > 0 {
-		fmt.Fprintf(output, "\nNext steps:\n")
+		flogf(output, quiet, "\nNext steps:\n")
 		for _, nextStep := range nextSteps {
-			fmt.Fprintf(output, "- %s\n", nextStep)
+			flogf(output, quiet, "- %s\n", nextStep)
 		}
 	}
 
 	return nil
 }
 
-func copyEmbeddedFS(srcFS embed.FS, src string, moduleBase string, output io.Writer) error {
+func copyEmbeddedFS(srcFS embed.FS, src string, moduleBase string, output io.Writer, quiet bool) error {
 	srcRoot := filepath.Join(assetsDir, src)
 
 	err := fs.WalkDir(srcFS, srcRoot, func(srcPath string, entry fs.DirEntry, err error) error {
@@ -301,7 +306,7 @@ func copyEmbeddedFS(srcFS embed.FS, src string, moduleBase string, output io.Wri
 			if err != nil {
 				return err
 			}
-			reportCreatedDir(output, dstPath)
+			reportCreatedDir(output, quiet, dstPath)
 		} else {
 			// Copy file
 			fileBytes, err := fs.ReadFile(srcFS, srcPath)
@@ -312,7 +317,7 @@ func copyEmbeddedFS(srcFS embed.FS, src string, moduleBase string, output io.Wri
 			if err != nil {
 				return err
 			}
-			reportCreatedFile(output, dstPath)
+			reportCreatedFile(output, quiet, dstPath)
 		}
 
 		return nil
@@ -325,16 +330,28 @@ func copyEmbeddedFS(srcFS embed.FS, src string, moduleBase string, output io.Wri
 	return nil
 }
 
-func reportCreatedAtPath(output io.Writer, fileType string, filePath string) {
-	fmt.Fprintln(output, fmt.Sprintf("- Created %-9s: %s", fileType, filePath))
+func flogf(output io.Writer, quiet bool, format string, a ...any) {
+	if !quiet {
+		fmt.Fprintf(output, format, a...)
+	}
 }
 
-func reportCreatedDir(output io.Writer, filePath string) {
-	reportCreatedAtPath(output, "directory", filePath)
+func flogln(output io.Writer, quiet bool, a ...any) {
+	if !quiet {
+		fmt.Fprintln(output, a...)
+	}
 }
 
-func reportCreatedFile(output io.Writer, filePath string) {
-	reportCreatedAtPath(output, "file", filePath)
+func reportCreatedAtPath(output io.Writer, quiet bool, fileType string, filePath string) {
+	flogf(output, quiet, "- Created %-9s: %s\n", fileType, filePath)
+}
+
+func reportCreatedDir(output io.Writer, quiet bool, filePath string) {
+	reportCreatedAtPath(output, quiet, "directory", filePath)
+}
+
+func reportCreatedFile(output io.Writer, quiet bool, filePath string) {
+	reportCreatedAtPath(output, quiet, "file", filePath)
 }
 
 func withoutFilepathPrefix(filePath string, filePathPrefix string) string {
