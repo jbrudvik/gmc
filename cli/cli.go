@@ -378,5 +378,9 @@ func withoutFilepathPrefix(filePath string, filePathPrefix string) string {
 
 func getVersion() string {
 	info, _ := debug.ReadBuildInfo()
-	return info.Main.Version
+	version := info.Main.Version
+	if version == "" {
+		version = "(devel)"
+	}
+	return version
 }
