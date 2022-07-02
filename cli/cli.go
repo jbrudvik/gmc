@@ -176,87 +176,13 @@ func createModule(module string, repo *gitRepo, extraDirs []string, output io.Wr
 		}
 	}
 
+	// Set up Git repo
 	if repo != nil {
-		// Initialize Git repository
-		cmd := exec.Command("git", "init")
-		if repo.initialBranch != nil {
-			cmd = exec.Command("git", "init", "--initial-branch", *repo.initialBranch)
-		}
-		cmd.Dir = moduleBase
-		if err = cmd.Run(); err != nil {
-			return errors.New("Failed to initialize Git repository")
-		}
-		flogln(output, quiet, "- Initialized Git repository")
-
-		// Create .gitignore
-		gitignoreFilePath := filepath.Join(moduleBase, gitignoreFileName)
-		err = os.WriteFile(gitignoreFilePath, []byte(moduleBase), 0644)
+		err, gitRepoNextSteps := setUpGitRepo(repo, module, moduleBase, output, quiet)
 		if err != nil {
 			return err
 		}
-		reportCreatedFile(output, quiet, gitignoreFilePath)
-
-		// Create README.md (with title)
-		readmeFilePath := filepath.Join(moduleBase, readmeFileName)
-		readmeContent := fmt.Sprintf("# %s\n\n", moduleBase)
-		err = os.WriteFile(readmeFilePath, []byte(readmeContent), 0644)
-		if err != nil {
-			return err
-		}
-		reportCreatedFile(output, quiet, readmeFilePath)
-
-		// Commit all files to Git repository
-		cmd = exec.Command("git", "add", ".")
-		cmd.Dir = moduleBase
-		if err = cmd.Run(); err != nil {
-			return errors.New("Failed to stage files for Git commit")
-		}
-		cmd = exec.Command("git", "commit", "-m", "Initial commit")
-		cmd.Dir = moduleBase
-		if err = cmd.Run(); err != nil {
-			return errors.New("Failed to commit files into Git repository")
-		}
-		flogln(output, quiet, "- Committed all files to Git repository")
-
-		// Add Git repository remote
-		gitUrlCore := strings.Replace(module, "/", ":", 1)
-		var gitUrl string
-		if gitUrlCore != module {
-			gitUrl = fmt.Sprintf("git@%s.git", gitUrlCore)
-			cmd = exec.Command("git", "remote", "add", "origin", gitUrl)
-			cmd.Dir = moduleBase
-			if err = cmd.Run(); err != nil {
-				return errors.New("Failed to stage files for Git commit")
-			}
-			flogf(output, quiet, "- Added remote for Git repository: %s\n", gitUrl)
-		} else {
-			flogln(output, quiet, "- NOTE: Unable to add remote for Git repository")
-		}
-
-		// Add next step: Create remote repository
-		nextStepCreateRemote := "Create remote Git repository"
-		if len(gitUrl) > 0 {
-			nextStepCreateRemote += fmt.Sprintf(" %s", gitUrl)
-			if strings.Contains(gitUrl, "github.com") {
-				nextStepCreateRemote += ": https://github.com/new"
-			}
-		}
-		nextSteps = append(nextSteps, nextStepCreateRemote)
-
-		// Add next step: Push to remote
-		var cmdOutputBuffer bytes.Buffer
-		cmd = exec.Command("git", "symbolic-ref", "--short", "HEAD")
-		cmd.Dir = moduleBase
-		cmd.Stdout = &cmdOutputBuffer
-		_ = cmd.Run()
-		cmdOutput := strings.TrimSpace(cmdOutputBuffer.String())
-		nextStepPush := "Push to remote Git repository: $ git push -u origin "
-		if cmdOutput != "" {
-			nextStepPush += cmdOutput
-		} else {
-			nextStepPush += "$(git branch --show-current)"
-		}
-		nextSteps = append(nextSteps, nextStepPush)
+		nextSteps = append(nextSteps, gitRepoNextSteps...)
 	}
 
 	// Output success
@@ -329,6 +255,93 @@ func copyEmbeddedFS(srcFS embed.FS, src string, moduleBase string, output io.Wri
 	}
 
 	return nil
+}
+
+func setUpGitRepo(repo *gitRepo, module string, moduleBase string, output io.Writer, quiet bool) (error, []string) {
+	nextSteps := []string{}
+
+	// Initialize Git repository
+	cmd := exec.Command("git", "init")
+	if repo.initialBranch != nil {
+		cmd = exec.Command("git", "init", "--initial-branch", *repo.initialBranch)
+	}
+	cmd.Dir = moduleBase
+	if err := cmd.Run(); err != nil {
+		return errors.New("Failed to initialize Git repository"), nil
+	}
+	flogln(output, quiet, "- Initialized Git repository")
+
+	// Create .gitignore
+	gitignoreFilePath := filepath.Join(moduleBase, gitignoreFileName)
+	err := os.WriteFile(gitignoreFilePath, []byte(moduleBase), 0644)
+	if err != nil {
+		return err, nil
+	}
+	reportCreatedFile(output, quiet, gitignoreFilePath)
+
+	// Create README.md (with title)
+	readmeFilePath := filepath.Join(moduleBase, readmeFileName)
+	readmeContent := fmt.Sprintf("# %s\n\n", moduleBase)
+	err = os.WriteFile(readmeFilePath, []byte(readmeContent), 0644)
+	if err != nil {
+		return err, nil
+	}
+	reportCreatedFile(output, quiet, readmeFilePath)
+
+	// Commit all files to Git repository
+	cmd = exec.Command("git", "add", ".")
+	cmd.Dir = moduleBase
+	if err = cmd.Run(); err != nil {
+		return errors.New("Failed to stage files for Git commit"), nil
+	}
+	cmd = exec.Command("git", "commit", "-m", "Initial commit")
+	cmd.Dir = moduleBase
+	if err = cmd.Run(); err != nil {
+		return errors.New("Failed to commit files into Git repository"), nil
+	}
+	flogln(output, quiet, "- Committed all files to Git repository")
+
+	// Add Git repository remote
+	gitUrlCore := strings.Replace(module, "/", ":", 1)
+	var gitUrl string
+	if gitUrlCore != module {
+		gitUrl = fmt.Sprintf("git@%s.git", gitUrlCore)
+		cmd = exec.Command("git", "remote", "add", "origin", gitUrl)
+		cmd.Dir = moduleBase
+		if err = cmd.Run(); err != nil {
+			return errors.New("Failed to stage files for Git commit"), nil
+		}
+		flogf(output, quiet, "- Added remote for Git repository: %s\n", gitUrl)
+	} else {
+		flogln(output, quiet, "- NOTE: Unable to add remote for Git repository")
+	}
+
+	// Add next step: Create remote repository
+	nextStepCreateRemote := "Create remote Git repository"
+	if len(gitUrl) > 0 {
+		nextStepCreateRemote += fmt.Sprintf(" %s", gitUrl)
+		if strings.Contains(gitUrl, "github.com") {
+			nextStepCreateRemote += ": https://github.com/new"
+		}
+	}
+	nextSteps = append(nextSteps, nextStepCreateRemote)
+
+	// Add next step: Push to remote
+	var cmdOutputBuffer bytes.Buffer
+	cmd = exec.Command("git", "symbolic-ref", "--short", "HEAD")
+	cmd.Dir = moduleBase
+	cmd.Stdout = &cmdOutputBuffer
+	_ = cmd.Run()
+	cmdOutput := strings.TrimSpace(cmdOutputBuffer.String())
+	nextStepPush := "Push to remote Git repository: $ git push -u origin "
+	if cmdOutput != "" {
+		nextStepPush += cmdOutput
+	} else {
+		nextStepPush += "$(git branch --show-current)"
+	}
+	nextSteps = append(nextSteps, nextStepPush)
+
+	return nil, nextSteps
 }
 
 func flogf(output io.Writer, quiet bool, format string, a ...any) {
