@@ -10,13 +10,16 @@ import (
 	"os"
 	"os/exec"
 	"path/filepath"
+	"runtime/debug"
 	"strings"
 
 	"github.com/urfave/cli/v2"
 )
 
 const Name string = "gmc"
-const Version string = "v0.0.5"
+
+var Version string = getVersion()
+
 const Url string = "https://github.com/jbrudvik/" + Name
 
 const Description string = "`" + Name + " [module name]` creates a directory containing:\n" +
@@ -371,4 +374,9 @@ func reportCreatedFile(output io.Writer, quiet bool, filePath string) {
 func withoutFilepathPrefix(filePath string, filePathPrefix string) string {
 	filePathPrefixWithSeparator := filePathPrefix + string(filepath.Separator)
 	return strings.TrimPrefix(filePath, filePathPrefixWithSeparator)
+}
+
+func getVersion() string {
+	info, _ := debug.ReadBuildInfo()
+	return info.Main.Version
 }
