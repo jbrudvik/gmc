@@ -85,7 +85,8 @@ func AppWithCustomEverything(output io.Writer, errorOutput io.Writer, exitCodeHa
 			c.Set("help", "true")
 			return errors.New("Error: Unknown flag")
 		},
-		HideHelpCommand: true,
+		HideHelpCommand:        true,
+		UseShortOptionHandling: true,
 		Flags: []cli.Flag{
 			&cli.BoolFlag{
 				Name:    "git",
