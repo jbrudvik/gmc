@@ -3,16 +3,16 @@
 ## Before committing
 
 ```sh
-# Code must be formatted correctly
+# Format all code correctly
 $ goimports -w .
 
-# Code must build successfully
+# Ensure code builds succesfully
 $ go build
 
-# Code must be free of common mistakes
+# Ensure code is free of common mistakes
 $ go vet ./...
 
-# All tests must pass
+# Ensure all tests pass
 $ go test ./...
 ```
 
