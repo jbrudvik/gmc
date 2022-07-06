@@ -2,6 +2,9 @@
 
 `gmc` (Go mod create) is a CLI that creates Go modules so you can start coding ASAP
 
+[![Build](https://github.com/jbrudvik/gmc/actions/workflows/build.yml/badge.svg)](https://github.com/jbrudvik/gmc/actions/workflows/build.yml)
+[![Go Reference](https://pkg.go.dev/badge/github.com/jbrudvik/gmc.svg)](https://pkg.go.dev/github.com/jbrudvik/gmc)
+
 ## Usage
 
 ### Create a module as Git repository
