@@ -2,20 +2,9 @@
 
 `gmc` (Go mod create) is a CLI that creates Go modules so you can start coding ASAP
 
-## Install
+## Usage
 
-### Required dependencies
-
-- [Go 1.18](https://go.dev/doc/install)
-- [Git](https://git-scm.com) (for Git-related features)
-
-### Install gmc
-
-```sh
-$ go install github.com/jbrudvik/gmc@latest
-```
-
-## Create a module as Git repository
+### Create a module as Git repository
 
 ```
 $ gmc -g github.com/jbrudvik/foo
@@ -37,7 +26,7 @@ Next steps:
 - Start coding: $ vim foo
 ```
 
-## Show help
+### Show help
 
 ```
 $ gmc -h
@@ -72,4 +61,17 @@ GLOBAL OPTIONS:
    --quiet, -q    silence output (default: false)
    --help, -h     show help (default: false)
    --version, -v  print the version (default: false)
+```
+
+## Install
+
+### Required dependencies
+
+- [Go 1.18](https://go.dev/doc/install)
+- [Git](https://git-scm.com) (for Git-related features)
+
+### Install gmc
+
+```sh
+$ go install github.com/jbrudvik/gmc@latest
 ```
