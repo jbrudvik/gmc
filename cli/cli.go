@@ -183,7 +183,8 @@ func createModule(module string, repo *gitRepo, extraDirs []string, output io.Wr
 	if repo != nil {
 		err, gitRepoNextSteps := setUpGitRepo(repo, module, moduleBase, output, quiet)
 		if err != nil {
-			return err
+			errorMessage := fmt.Sprintf("Failed to create as Git repository: %s", err.Error())
+			return errors.New(errorMessage)
 		}
 		nextSteps = append(nextSteps, gitRepoNextSteps...)
 	}
@@ -263,8 +264,32 @@ func copyEmbeddedFS(srcFS embed.FS, src string, moduleBase string, output io.Wri
 func setUpGitRepo(repo *gitRepo, module string, moduleBase string, output io.Writer, quiet bool) (error, []string) {
 	nextSteps := []string{}
 
+	// Ensure Git user.email is set
+	cmd := exec.Command("git", "config", "--global", "user.email")
+	cmd.Dir = moduleBase
+	cmdOutputBytes, err := cmd.Output()
+	if err != nil {
+		return errors.New("Failed to look up Git user.email"), nil
+	}
+	cmdOutput := strings.TrimSpace(string(cmdOutputBytes))
+	if cmdOutput == "" {
+		return errors.New("`git config --global user.email` must be set"), nil
+	}
+
+	// Ensure Git user.name is set
+	cmd = exec.Command("git", "config", "--global", "user.name")
+	cmd.Dir = moduleBase
+	cmdOutputBytes, err = cmd.Output()
+	if err != nil {
+		return errors.New("Failed to look up Git user.name"), nil
+	}
+	cmdOutput = strings.TrimSpace(string(cmdOutputBytes))
+	if cmdOutput == "" {
+		return errors.New("`git config --global user.name` must be set"), nil
+	}
+
 	// Initialize Git repository
-	cmd := exec.Command("git", "init")
+	cmd = exec.Command("git", "init")
 	if repo.initialBranch != nil {
 		cmd = exec.Command("git", "init", "--initial-branch", *repo.initialBranch)
 	}
@@ -276,7 +301,7 @@ func setUpGitRepo(repo *gitRepo, module string, moduleBase string, output io.Wri
 
 	// Create .gitignore
 	gitignoreFilePath := filepath.Join(moduleBase, gitignoreFileName)
-	err := os.WriteFile(gitignoreFilePath, []byte(moduleBase), 0644)
+	err = os.WriteFile(gitignoreFilePath, []byte(moduleBase), 0644)
 	if err != nil {
 		return err, nil
 	}
@@ -300,7 +325,8 @@ func setUpGitRepo(repo *gitRepo, module string, moduleBase string, output io.Wri
 	cmd = exec.Command("git", "commit", "-m", "Initial commit")
 	cmd.Dir = moduleBase
 	if err = cmd.Run(); err != nil {
-		return errors.New("Failed to commit files into Git repository"), nil
+		errorMessage := fmt.Sprintf("Failed to commit files into Git repository")
+		return errors.New(errorMessage), nil
 	}
 	flogln(output, quiet, "- Committed all files to Git repository")
 
@@ -335,7 +361,7 @@ func setUpGitRepo(repo *gitRepo, module string, moduleBase string, output io.Wri
 	cmd.Dir = moduleBase
 	cmd.Stdout = &cmdOutputBuffer
 	_ = cmd.Run()
-	cmdOutput := strings.TrimSpace(cmdOutputBuffer.String())
+	cmdOutput = strings.TrimSpace(cmdOutputBuffer.String())
 	nextStepPush := "Push to remote Git repository: $ git push -u origin "
 	if cmdOutput != "" {
 		nextStepPush += cmdOutput
