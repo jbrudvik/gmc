@@ -12,7 +12,8 @@ jobs:
           go-version: 1.18 # TODO: Pin to tighter version?
       - name: Install goimports
         run: go install golang.org/x/tools/cmd/goimports@latest
-      # TODO: Will these fail as I expect or do I need to put in explicit tests?
+      - name: Set Git author
+        run: git config user.name "Builder"; git config user.email builder@example.com
       - name: Format
         run: output=$(goimports -d .); echo -n $output; test -z $output
       - name: Build
