@@ -276,21 +276,17 @@ func setUpGitRepo(repo *gitRepo, module string, moduleBase string, output io.Wri
 		return errors.New("`git config --global user.email` must be set"), nil
 	}
 
-	/*
-		// Q: Do we need user.name for sure? Probably not...
-		// TODO: Refactor with above?
-		// Ensure Git user.name is set
-		cmd = exec.Command("git", "config", "--global", "user.name")
-		cmd.Dir = moduleBase
-		cmdOutputBytes, err = cmd.Output()
-		if err != nil {
-			return errors.New("Failed to look up Git user.name"), nil
-		}
-		cmdOutput = strings.TrimSpace(string(cmdOutputBytes))
-		if cmdOutput == "" {
-			return errors.New("`git config --global user.name` must be set"), nil
-		}
-	*/
+	// Ensure Git user.name is set
+	cmd = exec.Command("git", "config", "--global", "user.name")
+	cmd.Dir = moduleBase
+	cmdOutputBytes, err = cmd.Output()
+	if err != nil {
+		return errors.New("Failed to look up Git user.name"), nil
+	}
+	cmdOutput = strings.TrimSpace(string(cmdOutputBytes))
+	if cmdOutput == "" {
+		return errors.New("`git config --global user.name` must be set"), nil
+	}
 
 	// Initialize Git repository
 	cmd = exec.Command("git", "init")
