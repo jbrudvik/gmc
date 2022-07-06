@@ -818,60 +818,56 @@ func assertExpectedFileIsAtPath(t *testing.T, f file, filePath string) {
 
 func assertExpectedGitRepoExists(t *testing.T, expectedGitRepo gitRepo) {
 	// Assert Git repository has expected branch name
-	var cmdOutputBuffer bytes.Buffer
 	cmd := exec.Command("git", "branch", "--show-current")
 	cmd.Dir = expectedGitRepo.dir
-	cmd.Stdout = &cmdOutputBuffer
-	if err := cmd.Run(); err != nil {
+	cmdOutput, err := cmd.Output()
+	if err != nil {
 		t.Errorf("Unable to view Git branch name in %s:", expectedGitRepo.dir)
 		return
 	}
-	actualBranchName := strings.TrimSpace(cmdOutputBuffer.String())
+	actualBranchName := strings.TrimSpace(string(cmdOutput))
 	if expectedGitRepo.branchName != actualBranchName {
 		t.Error(testCaseUnexpectedMessage("Git repository branch name", expectedGitRepo.branchName, actualBranchName))
 	}
 
 	// Assert all files have been committed to Git repository
-	cmdOutputBuffer = bytes.Buffer{}
 	cmd = exec.Command("git", "status", "-s")
 	cmd.Dir = expectedGitRepo.dir
-	cmd.Stdout = &cmdOutputBuffer
-	if err := cmd.Run(); err != nil {
+	cmdOutput, err = cmd.Output()
+	if err != nil {
 		t.Errorf("Unable to view Git status in %s:", expectedGitRepo.dir)
 		return
 	}
-	cmdOutput := strings.TrimSpace(cmdOutputBuffer.String())
-	if cmdOutput != "" {
+	cmdOutputString := strings.TrimSpace(string(cmdOutput))
+	if cmdOutputString != "" {
 		t.Errorf("Not all files committed to Git repository: %s", cmdOutput)
 	}
 
 	// Assert Git repository has expected commit history
-	cmdOutputBuffer = bytes.Buffer{}
 	cmd = exec.Command("git", "log", "--pretty=%s")
 	cmd.Dir = expectedGitRepo.dir
-	cmd.Stdout = &cmdOutputBuffer
-	if err := cmd.Run(); err != nil {
+	cmdOutput, err = cmd.Output()
+	if err != nil {
 		t.Errorf("Unable to view Git commit history in %s:", expectedGitRepo.dir)
 		return
 	}
-	actualCommitMessagesString := strings.TrimSpace(cmdOutputBuffer.String())
+	actualCommitMessagesString := strings.TrimSpace(string(cmdOutput))
 	expectedCommitMessagesString := strings.Join(expectedGitRepo.commitMessages, "\n")
 	if expectedCommitMessagesString != actualCommitMessagesString {
 		t.Error(testCaseUnexpectedMessage("Git repository commit message history", expectedCommitMessagesString, actualCommitMessagesString))
 	}
 
 	// Assert expected Git remote
-	cmdOutputBuffer = bytes.Buffer{}
 	cmd = exec.Command("git", "remote", "get-url", "origin")
 	cmd.Dir = expectedGitRepo.dir
-	cmd.Stdout = &cmdOutputBuffer
 	var actualGitRemote *string = nil
-	if err := cmd.Run(); err != nil {
+	cmdOutput, err = cmd.Output()
+	if err != nil {
 		// Expected when no remote set
 	}
-	cmdOutput = strings.TrimSpace(cmdOutputBuffer.String())
-	if cmdOutput != "" {
-		actualGitRemote = &cmdOutput
+	cmdOutputString = strings.TrimSpace(string(cmdOutput))
+	if cmdOutputString != "" {
+		actualGitRemote = &cmdOutputString
 	}
 	if expectedGitRepo.remote == nil {
 		if actualGitRemote != nil {
@@ -879,7 +875,7 @@ func assertExpectedGitRepoExists(t *testing.T, expectedGitRepo gitRepo) {
 		}
 	} else {
 		expectedGitRemote := *expectedGitRepo.remote
-		if expectedGitRemote != cmdOutput {
+		if expectedGitRemote != cmdOutputString {
 			t.Error(testCaseUnexpectedMessage("Git remote", *expectedGitRepo.remote, *actualGitRemote))
 		}
 	}

@@ -1,7 +1,6 @@
 package cli
 
 import (
-	"bytes"
 	"embed"
 	"errors"
 	"fmt"
@@ -267,24 +266,24 @@ func setUpGitRepo(repo *gitRepo, module string, moduleBase string, output io.Wri
 	// Ensure Git user.email is set
 	cmd := exec.Command("git", "config", "--global", "user.email")
 	cmd.Dir = moduleBase
-	cmdOutputBytes, err := cmd.Output()
+	cmdOutput, err := cmd.Output()
 	if err != nil {
 		return errors.New("Failed to look up Git user.email"), nil
 	}
-	cmdOutput := strings.TrimSpace(string(cmdOutputBytes))
-	if cmdOutput == "" {
+	cmdOutputString := strings.TrimSpace(string(cmdOutput))
+	if cmdOutputString == "" {
 		return errors.New("`git config --global user.email` must be set"), nil
 	}
 
 	// Ensure Git user.name is set
 	cmd = exec.Command("git", "config", "--global", "user.name")
 	cmd.Dir = moduleBase
-	cmdOutputBytes, err = cmd.Output()
+	cmdOutput, err = cmd.Output()
 	if err != nil {
 		return errors.New("Failed to look up Git user.name"), nil
 	}
-	cmdOutput = strings.TrimSpace(string(cmdOutputBytes))
-	if cmdOutput == "" {
+	cmdOutputString = strings.TrimSpace(string(cmdOutput))
+	if cmdOutputString == "" {
 		return errors.New("`git config --global user.name` must be set"), nil
 	}
 
@@ -356,19 +355,19 @@ func setUpGitRepo(repo *gitRepo, module string, moduleBase string, output io.Wri
 	nextSteps = append(nextSteps, nextStepCreateRemote)
 
 	// Add next step: Push to remote
-	var cmdOutputBuffer bytes.Buffer
 	cmd = exec.Command("git", "symbolic-ref", "--short", "HEAD")
 	cmd.Dir = moduleBase
-	cmd.Stdout = &cmdOutputBuffer
-	_ = cmd.Run()
-	cmdOutput = strings.TrimSpace(cmdOutputBuffer.String())
-	nextStepPush := "Push to remote Git repository: $ git push -u origin "
-	if cmdOutput != "" {
-		nextStepPush += cmdOutput
-	} else {
-		nextStepPush += "$(git branch --show-current)"
+	cmdOutput, err = cmd.Output()
+	if err == nil {
+		cmdOutputString = strings.TrimSpace(string(cmdOutput))
+		nextStepPush := "Push to remote Git repository: $ git push -u origin "
+		if cmdOutputString != "" {
+			nextStepPush += cmdOutputString
+		} else {
+			nextStepPush += "$(git branch --show-current)"
+		}
+		nextSteps = append(nextSteps, nextStepPush)
 	}
-	nextSteps = append(nextSteps, nextStepPush)
 
 	return nil, nextSteps
 }
