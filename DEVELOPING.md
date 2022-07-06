@@ -1,5 +1,10 @@
 # Developing
 
+## Setup
+
+- Install Go 1.18: https://go.dev/doc/install
+- Install [goimports](https://pkg.go.dev/golang.org/x/tools/cmd/goimports): `$ go install golang.org/x/tools/cmd/goimports@latest`
+
 ## Before committing
 
 ```sh
