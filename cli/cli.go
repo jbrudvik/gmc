@@ -298,18 +298,15 @@ func setUpGitRepo(repo *gitRepo, module string, moduleBase string, output io.Wri
 		return errors.New("Failed to stage files for Git commit"), nil
 	}
 	cmd = exec.Command("git", "commit", "-m", "Initial commit")
-	var cmdOutputBuffer bytes.Buffer
 	var cmdErrorOutputBuffer bytes.Buffer
 	cmd.Dir = moduleBase
-	cmd.Stdout = &cmdOutputBuffer
 	cmd.Stderr = &cmdErrorOutputBuffer
 	if err = cmd.Run(); err != nil {
 		cmdErrorOutput := strings.TrimSpace(cmdErrorOutputBuffer.String())
 		errorMessage := fmt.Sprintf("Failed to commit files into Git repository: %s", cmdErrorOutput)
 		return errors.New(errorMessage), nil
 	}
-	cmdOutput := strings.TrimSpace(cmdOutputBuffer.String())
-	flogf(output, quiet, "- Committed all files to Git repository: %s", cmdOutput)
+	flogln(output, quiet, "- Committed all files to Git repository")
 
 	// Add Git repository remote
 	gitUrlCore := strings.Replace(module, "/", ":", 1)
@@ -337,12 +334,12 @@ func setUpGitRepo(repo *gitRepo, module string, moduleBase string, output io.Wri
 	nextSteps = append(nextSteps, nextStepCreateRemote)
 
 	// Add next step: Push to remote
-	cmdOutputBuffer = bytes.Buffer{}
+	var cmdOutputBuffer bytes.Buffer
 	cmd = exec.Command("git", "symbolic-ref", "--short", "HEAD")
 	cmd.Dir = moduleBase
 	cmd.Stdout = &cmdOutputBuffer
 	_ = cmd.Run()
-	cmdOutput = strings.TrimSpace(cmdOutputBuffer.String())
+	cmdOutput := strings.TrimSpace(cmdOutputBuffer.String())
 	nextStepPush := "Push to remote Git repository: $ git push -u origin "
 	if cmdOutput != "" {
 		nextStepPush += cmdOutput
