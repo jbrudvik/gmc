@@ -4,6 +4,13 @@
 
 ## Install
 
+### Required dependencies
+
+- [Go 1.18](https://go.dev/doc/install)
+- [Git](https://git-scm.com) (for Git-related features)
+
+### Install gmc
+
 ```sh
 $ go install github.com/jbrudvik/gmc@latest
 ```
