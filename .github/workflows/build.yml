@@ -13,7 +13,7 @@ jobs:
       - name: Install goimports
         run: go install golang.org/x/tools/cmd/goimports@latest
       - name: Set Git author
-        run: git config user.email "builder@example.com"; git config --global user.name "Builder"
+        run: git config --global user.email "builder@example.com"; git config --global user.name "Builder"
       - name: Format
         run: output=$(goimports -d .); echo -n $output; test -z $output
       - name: Build
