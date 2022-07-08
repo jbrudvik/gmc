@@ -62,7 +62,7 @@ func TestExecutable(t *testing.T) {
 		{
 			args:             []string{"-h"},
 			expectedExitCode: 0,
-			expectedStdout:   helpOutput + helpOutput,
+			expectedStdout:   helpOutput,
 			expectedStderr:   "",
 		},
 	}
