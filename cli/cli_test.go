@@ -70,7 +70,7 @@ const novaTaskContents string = `{
   "actions": {
     "build": {
       "enabled": true,
-      "script": "go build && go test ./..."
+      "script": "goimports -w . && go build && go vet ./... && go test ./..."
     },
     "clean": {
       "enabled": true,

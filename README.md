@@ -72,6 +72,7 @@ GLOBAL OPTIONS:
 ### Required dependencies
 
 - [Go 1.18](https://go.dev/doc/install)
+- [goimports](https://pkg.go.dev/golang.org/x/tools/cmd/goimports): `$ go install golang.org/x/tools/cmd/goimports@latest`
 - [Git](https://git-scm.com) (for Git-related features)
 
 ### Install gmc
