@@ -23,9 +23,11 @@ Creating Go module: github.com/jbrudvik/foo
 Finished creating Go module: github.com/jbrudvik/foo
 
 Next steps:
+- Change into your module's directory: $ cd foo
+- Run your module: $ go run .
 - Create remote Git repository git@github.com:jbrudvik/foo.git: https://github.com/new
 - Push to remote Git repository: $ git push -u origin main
-- Start coding: $ vim foo
+- Start coding: $ vim .
 ```
 
 ### Show help

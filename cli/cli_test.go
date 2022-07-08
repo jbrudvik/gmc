@@ -247,7 +247,9 @@ func TestRun(t *testing.T) {
 				"Finished creating Go module: a1\n"+
 				"\n"+
 				"Next steps:\n"+
-				"- Start coding: $ %s a1\n",
+				"- Change into your module's directory: $ cd a1\n"+
+				"- Run your module: $ go run .\n"+
+				"- Start coding: $ %s .\n",
 				editor),
 			expectedErrorOutput: "",
 			expectedExitCode:    0,
@@ -270,7 +272,9 @@ func TestRun(t *testing.T) {
 				"Finished creating Go module: a2\n" +
 				"\n" +
 				"Next steps:\n" +
-				"- Start coding: $ nova a2\n",
+				"- Change into your module's directory: $ cd a2\n" +
+				"- Run your module: $ go run .\n" +
+				"- Start coding: $ nova .\n",
 			expectedErrorOutput: "",
 			expectedExitCode:    0,
 			expectedFiles: &file{"a2", dirPerms, nil, []file{
@@ -297,7 +301,9 @@ func TestRun(t *testing.T) {
 				"Finished creating Go module: a3\n" +
 				"\n" +
 				"Next steps:\n" +
-				"- Start coding: $ nova a3\n",
+				"- Change into your module's directory: $ cd a3\n" +
+				"- Run your module: $ go run .\n" +
+				"- Start coding: $ nova .\n",
 			expectedErrorOutput: "",
 			expectedExitCode:    0,
 			expectedFiles: &file{"a3", dirPerms, nil, []file{
@@ -321,7 +327,9 @@ func TestRun(t *testing.T) {
 				"Finished creating Go module: github.com/foo\n"+
 				"\n"+
 				"Next steps:\n"+
-				"- Start coding: $ %s foo\n",
+				"- Change into your module's directory: $ cd foo\n"+
+				"- Run your module: $ go run .\n"+
+				"- Start coding: $ %s .\n",
 				editor),
 			expectedErrorOutput: "",
 			expectedExitCode:    0,
@@ -344,7 +352,9 @@ func TestRun(t *testing.T) {
 				"Finished creating Go module: github.com/foo/bar\n" +
 				"\n" +
 				"Next steps:\n" +
-				"- Start coding: $ nova bar\n",
+				"- Change into your module's directory: $ cd bar\n" +
+				"- Run your module: $ go run .\n" +
+				"- Start coding: $ nova .\n",
 			expectedErrorOutput: "",
 			expectedExitCode:    0,
 			expectedFiles: &file{"bar", dirPerms, nil, []file{
@@ -371,7 +381,9 @@ func TestRun(t *testing.T) {
 				"Finished creating Go module: github.com/foo/bar/baz\n" +
 				"\n" +
 				"Next steps:\n" +
-				"- Start coding: $ nova baz\n",
+				"- Change into your module's directory: $ cd baz\n" +
+				"- Run your module: $ go run .\n" +
+				"- Start coding: $ nova .\n",
 			expectedErrorOutput: "",
 			expectedExitCode:    0,
 			expectedFiles: &file{"baz", dirPerms, nil, []file{
@@ -400,9 +412,11 @@ func TestRun(t *testing.T) {
 				"Finished creating Go module: github.com/foo/bar\n"+
 				"\n"+
 				"Next steps:\n"+
+				"- Change into your module's directory: $ cd bar\n"+
+				"- Run your module: $ go run .\n"+
 				"- Create remote Git repository git@github.com:foo/bar.git: https://github.com/new\n"+
 				"- Push to remote Git repository: $ git push -u origin %s\n"+
-				"- Start coding: $ %s bar\n",
+				"- Start coding: $ %s .\n",
 				gitBranchName,
 				editor),
 			expectedErrorOutput: "",
@@ -436,9 +450,11 @@ func TestRun(t *testing.T) {
 				"Finished creating Go module: github.com/foo/bar\n"+
 				"\n"+
 				"Next steps:\n"+
+				"- Change into your module's directory: $ cd bar\n"+
+				"- Run your module: $ go run .\n"+
 				"- Create remote Git repository git@github.com:foo/bar.git: https://github.com/new\n"+
 				"- Push to remote Git repository: $ git push -u origin %s\n"+
-				"- Start coding: $ %s bar\n",
+				"- Start coding: $ %s .\n",
 				gitBranchName,
 				editor,
 			),
@@ -476,9 +492,11 @@ func TestRun(t *testing.T) {
 				"Finished creating Go module: github.com/foo/bar\n"+
 				"\n"+
 				"Next steps:\n"+
+				"- Change into your module's directory: $ cd bar\n"+
+				"- Run your module: $ go run .\n"+
 				"- Create remote Git repository git@github.com:foo/bar.git: https://github.com/new\n"+
 				"- Push to remote Git repository: $ git push -u origin %s\n"+
-				"- Start coding: $ nova bar\n",
+				"- Start coding: $ nova .\n",
 				gitBranchName,
 			),
 			expectedErrorOutput: "",
@@ -520,9 +538,11 @@ func TestRun(t *testing.T) {
 				"Finished creating Go module: github.com/foo/bar\n"+
 				"\n"+
 				"Next steps:\n"+
+				"- Change into your module's directory: $ cd bar\n"+
+				"- Run your module: $ go run .\n"+
 				"- Create remote Git repository git@github.com:foo/bar.git: https://github.com/new\n"+
 				"- Push to remote Git repository: $ git push -u origin %s\n"+
-				"- Start coding: $ nova bar\n",
+				"- Start coding: $ nova .\n",
 				gitBranchName,
 			),
 			expectedErrorOutput: "",
@@ -588,9 +608,11 @@ func TestRun(t *testing.T) {
 				"Finished creating Go module: foo\n"+
 				"\n"+
 				"Next steps:\n"+
+				"- Change into your module's directory: $ cd foo\n"+
+				"- Run your module: $ go run .\n"+
 				"- Create remote Git repository\n"+
 				"- Push to remote Git repository: $ git push -u origin %s\n"+
-				"- Start coding: $ nova foo\n",
+				"- Start coding: $ nova .\n",
 				gitBranchName,
 			),
 			expectedErrorOutput: "",
@@ -632,9 +654,11 @@ func TestRun(t *testing.T) {
 				"Finished creating Go module: example.com/foo/bar\n"+
 				"\n"+
 				"Next steps:\n"+
+				"- Change into your module's directory: $ cd bar\n"+
+				"- Run your module: $ go run .\n"+
 				"- Create remote Git repository git@example.com:foo/bar.git\n"+
 				"- Push to remote Git repository: $ git push -u origin %s\n"+
-				"- Start coding: $ nova bar\n",
+				"- Start coding: $ nova .\n",
 				gitBranchName,
 			),
 			expectedErrorOutput: "",
