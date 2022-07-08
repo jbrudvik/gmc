@@ -9,23 +9,23 @@
 ### Create a module as Git repository
 
 ```
-$ gmc -g github.com/jbrudvik/foo
-Creating Go module: github.com/jbrudvik/foo
-- Created directory: foo
+$ gmc -g github.com/jbrudvik/mymodule
+Creating Go module: github.com/jbrudvik/mymodule
+- Created directory: mymodule
 - Initialized Go module
-- Created file     : foo/main.go
+- Created file     : mymodule/main.go
 - Initialized Git repository
-- Created file     : foo/.gitignore
-- Created file     : foo/README.md
+- Created file     : mymodule/.gitignore
+- Created file     : mymodule/README.md
 - Committed all files to Git repository
-- Added remote for Git repository: git@github.com:jbrudvik/foo.git
+- Added remote for Git repository: git@github.com:jbrudvik/mymodule.git
 
-Finished creating Go module: github.com/jbrudvik/foo
+Finished creating Go module: github.com/jbrudvik/mymodule
 
 Next steps:
-- Change into your module's directory: $ cd foo
+- Change into your module's directory: $ cd mymodule
 - Run your module: $ go run .
-- Create remote Git repository git@github.com:jbrudvik/foo.git: https://github.com/new
+- Create remote Git repository git@github.com:jbrudvik/mymodule.git: https://github.com/new
 - Push to remote Git repository: $ git push -u origin main
 - Start coding: $ vim .
 ```
