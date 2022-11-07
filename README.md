@@ -55,13 +55,11 @@ DESCRIPTION:
 
    Optionally, the directory can also include:
    - Git repository setup with .gitignore, README.md
-   - Nova editor configuration to build/test/run natively
 
    More information: https://github.com/jbrudvik/gmc
 
 GLOBAL OPTIONS:
    --git, -g      create as Git repository (default: false)
-   --nova, -n     include Nova configuration (default: false)
    --quiet, -q    silence output (default: false)
    --help, -h     show help (default: false)
    --version, -v  print the version (default: false)

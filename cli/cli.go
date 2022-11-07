@@ -32,7 +32,6 @@ const Description string = "`" + Name + " [module name]` creates a directory con
 	"\n" +
 	"Optionally, the directory can also include:\n" +
 	"- Git repository setup with .gitignore, README.md\n" +
-	"- Nova editor configuration to build/test/run natively\n" +
 	"\n" +
 	"More information: " + Url
 
@@ -96,11 +95,6 @@ func AppWithCustomEverything(output io.Writer, errorOutput io.Writer, exitCodeHa
 				Aliases: []string{"g"},
 			},
 			&cli.BoolFlag{
-				Name:    "nova",
-				Usage:   "include Nova configuration",
-				Aliases: []string{"n"},
-			},
-			&cli.BoolFlag{
 				Name:    "quiet",
 				Usage:   "silence output", // Q: What about error output?
 				Aliases: []string{"q"},
@@ -127,9 +121,6 @@ func AppWithCustomEverything(output io.Writer, errorOutput io.Writer, exitCodeHa
 					}
 				}
 				var extraDirs []string
-				if c.Bool("nova") {
-					extraDirs = append(extraDirs, "nova")
-				}
 				quiet := c.Bool("quiet")
 
 				// Create module
@@ -199,12 +190,6 @@ func createModule(module string, repo *gitRepo, extraDirs []string, output io.Wr
 	editorEnvVar := os.Getenv("EDITOR")
 	if editorEnvVar != "" {
 		editor = editorEnvVar
-	}
-	for _, extraDir := range extraDirs {
-		if "nova" == extraDir {
-			editor = "nova"
-			break
-		}
 	}
 	nextSteps = append(nextSteps, fmt.Sprintf("Start coding: $ %s .", editor))
 

@@ -32,13 +32,11 @@ const helpOutput string = "NAME:\n" +
 	"   \n" +
 	"   Optionally, the directory can also include:\n" +
 	"   - Git repository setup with .gitignore, README.md\n" +
-	"   - Nova editor configuration to build/test/run natively\n" +
 	"   \n" +
 	"   More information: https://github.com/jbrudvik/gmc\n" +
 	"\n" +
 	"GLOBAL OPTIONS:\n" +
 	"   --git, -g      create as Git repository (default: false)\n" +
-	"   --nova, -n     include Nova configuration (default: false)\n" +
 	"   --quiet, -q    silence output (default: false)\n" +
 	"   --help, -h     show help (default: false)\n" +
 	"   --version, -v  print the version (default: false)\n"

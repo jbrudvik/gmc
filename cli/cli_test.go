@@ -37,13 +37,11 @@ var helpOutput string = fmt.Sprintf("NAME:\n"+
 	"   \n"+
 	"   Optionally, the directory can also include:\n"+
 	"   - Git repository setup with .gitignore, README.md\n"+
-	"   - Nova editor configuration to build/test/run natively\n"+
 	"   \n"+
 	"   More information: %s\n"+
 	"\n"+
 	"GLOBAL OPTIONS:\n"+
 	"   --git, -g      create as Git repository (default: false)\n"+
-	"   --nova, -n     include Nova configuration (default: false)\n"+
 	"   --quiet, -q    silence output (default: false)\n"+
 	"   --help, -h     show help (default: false)\n"+
 	"   --version, -v  print the version (default: false)\n",
@@ -65,25 +63,6 @@ const mainGoContents string = "package main\n" +
 	"func main() {\n" +
 	"	fmt.Println(\"hello, world!\")\n" +
 	"}\n"
-
-const novaTaskContents string = `{
-  "actions": {
-    "build": {
-      "enabled": true,
-      "script": "goimports -w . && go build && go vet ./... && go test ./..."
-    },
-    "clean": {
-      "enabled": true,
-      "script": "go clean"
-    },
-    "run": {
-      "enabled": true,
-      "script": "go run ."
-    }
-  },
-  "openLogOnRun": "start"
-}
-`
 
 const errorMessageUnknownFlag string = "Error: Unknown flag\n\n"
 const errorMessageModuleNameRequired string = "Error: Module name is required\n\n"
@@ -158,14 +137,6 @@ func TestRun(t *testing.T) {
 			expectedGitRepo:     nil,
 		},
 		{
-			args:                []string{"-hgn"},
-			expectedOutput:      helpOutput,
-			expectedErrorOutput: "",
-			expectedExitCode:    0,
-			expectedFiles:       nil,
-			expectedGitRepo:     nil,
-		},
-		{
 			args:                []string{"-v", "-q"},
 			expectedOutput:      versionOutput,
 			expectedErrorOutput: "",
@@ -201,22 +172,6 @@ func TestRun(t *testing.T) {
 			args:                []string{"-e", "a1"},
 			expectedOutput:      helpOutput,
 			expectedErrorOutput: errorMessageUnknownFlag,
-			expectedExitCode:    1,
-			expectedFiles:       nil,
-			expectedGitRepo:     nil,
-		},
-		{
-			args:                []string{"-n"},
-			expectedOutput:      helpOutput,
-			expectedErrorOutput: errorMessageModuleNameRequired,
-			expectedExitCode:    1,
-			expectedFiles:       nil,
-			expectedGitRepo:     nil,
-		},
-		{
-			args:                []string{"--nova"},
-			expectedOutput:      helpOutput,
-			expectedErrorOutput: errorMessageModuleNameRequired,
 			expectedExitCode:    1,
 			expectedFiles:       nil,
 			expectedGitRepo:     nil,
@@ -260,64 +215,6 @@ func TestRun(t *testing.T) {
 			expectedGitRepo: nil,
 		},
 		{
-			args: []string{"-n", "a2"},
-			expectedOutput: "Creating Go module: a2\n" +
-				"- Created directory: a2\n" +
-				"- Initialized Go module\n" +
-				"- Created file     : a2/main.go\n" +
-				"- Created directory: a2/.nova\n" +
-				"- Created directory: a2/.nova/Tasks\n" +
-				"- Created file     : a2/.nova/Tasks/Go.json\n" +
-				"\n" +
-				"Finished creating Go module: a2\n" +
-				"\n" +
-				"Next steps:\n" +
-				"- Change into your module's directory: $ cd a2\n" +
-				"- Run your module: $ go run .\n" +
-				"- Start coding: $ nova .\n",
-			expectedErrorOutput: "",
-			expectedExitCode:    0,
-			expectedFiles: &file{"a2", dirPerms, nil, []file{
-				{"go.mod", filePerms, []byte("module a2\n\ngo 1.18\n"), nil},
-				{"main.go", filePerms, []byte(mainGoContents), nil},
-				{".nova", dirPerms, nil, []file{
-					{"Tasks", dirPerms, nil, []file{
-						{"Go.json", filePerms, []byte(novaTaskContents), nil},
-					}},
-				}},
-			}},
-			expectedGitRepo: nil,
-		},
-		{
-			args: []string{"--nova", "a3"},
-			expectedOutput: "Creating Go module: a3\n" +
-				"- Created directory: a3\n" +
-				"- Initialized Go module\n" +
-				"- Created file     : a3/main.go\n" +
-				"- Created directory: a3/.nova\n" +
-				"- Created directory: a3/.nova/Tasks\n" +
-				"- Created file     : a3/.nova/Tasks/Go.json\n" +
-				"\n" +
-				"Finished creating Go module: a3\n" +
-				"\n" +
-				"Next steps:\n" +
-				"- Change into your module's directory: $ cd a3\n" +
-				"- Run your module: $ go run .\n" +
-				"- Start coding: $ nova .\n",
-			expectedErrorOutput: "",
-			expectedExitCode:    0,
-			expectedFiles: &file{"a3", dirPerms, nil, []file{
-				{"go.mod", filePerms, []byte("module a3\n\ngo 1.18\n"), nil},
-				{"main.go", filePerms, []byte(mainGoContents), nil},
-				{".nova", dirPerms, nil, []file{
-					{"Tasks", dirPerms, nil, []file{
-						{"Go.json", filePerms, []byte(novaTaskContents), nil},
-					}},
-				}},
-			}},
-			expectedGitRepo: nil,
-		},
-		{
 			args: []string{"github.com/foo"},
 			expectedOutput: fmt.Sprintf("Creating Go module: github.com/foo\n"+
 				"- Created directory: foo\n"+
@@ -336,64 +233,6 @@ func TestRun(t *testing.T) {
 			expectedFiles: &file{"foo", dirPerms, nil, []file{
 				{"go.mod", filePerms, []byte("module github.com/foo\n\ngo 1.18\n"), nil},
 				{"main.go", filePerms, []byte(mainGoContents), nil},
-			}},
-			expectedGitRepo: nil,
-		},
-		{
-			args: []string{"--nova", "github.com/foo/bar"},
-			expectedOutput: "Creating Go module: github.com/foo/bar\n" +
-				"- Created directory: bar\n" +
-				"- Initialized Go module\n" +
-				"- Created file     : bar/main.go\n" +
-				"- Created directory: bar/.nova\n" +
-				"- Created directory: bar/.nova/Tasks\n" +
-				"- Created file     : bar/.nova/Tasks/Go.json\n" +
-				"\n" +
-				"Finished creating Go module: github.com/foo/bar\n" +
-				"\n" +
-				"Next steps:\n" +
-				"- Change into your module's directory: $ cd bar\n" +
-				"- Run your module: $ go run .\n" +
-				"- Start coding: $ nova .\n",
-			expectedErrorOutput: "",
-			expectedExitCode:    0,
-			expectedFiles: &file{"bar", dirPerms, nil, []file{
-				{"go.mod", filePerms, []byte("module github.com/foo/bar\n\ngo 1.18\n"), nil},
-				{"main.go", filePerms, []byte(mainGoContents), nil},
-				{".nova", dirPerms, nil, []file{
-					{"Tasks", dirPerms, nil, []file{
-						{"Go.json", filePerms, []byte(novaTaskContents), nil},
-					}},
-				}},
-			}},
-			expectedGitRepo: nil,
-		},
-		{
-			args: []string{"-n", "github.com/foo/bar/baz"},
-			expectedOutput: "Creating Go module: github.com/foo/bar/baz\n" +
-				"- Created directory: baz\n" +
-				"- Initialized Go module\n" +
-				"- Created file     : baz/main.go\n" +
-				"- Created directory: baz/.nova\n" +
-				"- Created directory: baz/.nova/Tasks\n" +
-				"- Created file     : baz/.nova/Tasks/Go.json\n" +
-				"\n" +
-				"Finished creating Go module: github.com/foo/bar/baz\n" +
-				"\n" +
-				"Next steps:\n" +
-				"- Change into your module's directory: $ cd baz\n" +
-				"- Run your module: $ go run .\n" +
-				"- Start coding: $ nova .\n",
-			expectedErrorOutput: "",
-			expectedExitCode:    0,
-			expectedFiles: &file{"baz", dirPerms, nil, []file{
-				{"go.mod", filePerms, []byte("module github.com/foo/bar/baz\n\ngo 1.18\n"), nil},
-				{"main.go", filePerms, []byte(mainGoContents), nil},
-				{".nova", dirPerms, nil, []file{
-					{"Tasks", dirPerms, nil, []file{
-						{"Go.json", filePerms, []byte(novaTaskContents), nil},
-					}},
-				}},
 			}},
 			expectedGitRepo: nil,
 		},
@@ -472,214 +311,6 @@ func TestRun(t *testing.T) {
 				gitBranchName,
 				[]string{"Initial commit"},
 				ptr("git@github.com:foo/bar.git"),
-			},
-		},
-		{
-			args: []string{"-g", "-n", "github.com/foo/bar"},
-			expectedOutput: fmt.Sprintf("Creating Go module: github.com/foo/bar\n"+
-				"- Created directory: bar\n"+
-				"- Initialized Go module\n"+
-				"- Created file     : bar/main.go\n"+
-				"- Created directory: bar/.nova\n"+
-				"- Created directory: bar/.nova/Tasks\n"+
-				"- Created file     : bar/.nova/Tasks/Go.json\n"+
-				"- Initialized Git repository\n"+
-				"- Created file     : bar/.gitignore\n"+
-				"- Created file     : bar/README.md\n"+
-				"- Committed all files to Git repository\n"+
-				"- Added remote for Git repository: git@github.com:foo/bar.git\n"+
-				"\n"+
-				"Finished creating Go module: github.com/foo/bar\n"+
-				"\n"+
-				"Next steps:\n"+
-				"- Change into your module's directory: $ cd bar\n"+
-				"- Run your module: $ go run .\n"+
-				"- Create remote Git repository git@github.com:foo/bar.git: https://github.com/new\n"+
-				"- Push to remote Git repository: $ git push -u origin %s\n"+
-				"- Start coding: $ nova .\n",
-				gitBranchName,
-			),
-			expectedErrorOutput: "",
-			expectedExitCode:    0,
-			expectedFiles: &file{"bar", dirPerms, nil, []file{
-				{"go.mod", filePerms, []byte("module github.com/foo/bar\n\ngo 1.18\n"), nil},
-				{"main.go", filePerms, []byte(mainGoContents), nil},
-				{".git", dirPerms, nil, nil},
-				{".gitignore", filePerms, []byte("bar"), nil},
-				{"README.md", filePerms, []byte("# bar\n\n"), nil},
-				{".nova", dirPerms, nil, []file{
-					{"Tasks", dirPerms, nil, []file{
-						{"Go.json", filePerms, []byte(novaTaskContents), nil},
-					}},
-				}},
-			}},
-			expectedGitRepo: &gitRepo{
-				"bar",
-				gitBranchName,
-				[]string{"Initial commit"},
-				ptr("git@github.com:foo/bar.git"),
-			},
-		},
-		{
-			args: []string{"-gn", "github.com/foo/bar"},
-			expectedOutput: fmt.Sprintf("Creating Go module: github.com/foo/bar\n"+
-				"- Created directory: bar\n"+
-				"- Initialized Go module\n"+
-				"- Created file     : bar/main.go\n"+
-				"- Created directory: bar/.nova\n"+
-				"- Created directory: bar/.nova/Tasks\n"+
-				"- Created file     : bar/.nova/Tasks/Go.json\n"+
-				"- Initialized Git repository\n"+
-				"- Created file     : bar/.gitignore\n"+
-				"- Created file     : bar/README.md\n"+
-				"- Committed all files to Git repository\n"+
-				"- Added remote for Git repository: git@github.com:foo/bar.git\n"+
-				"\n"+
-				"Finished creating Go module: github.com/foo/bar\n"+
-				"\n"+
-				"Next steps:\n"+
-				"- Change into your module's directory: $ cd bar\n"+
-				"- Run your module: $ go run .\n"+
-				"- Create remote Git repository git@github.com:foo/bar.git: https://github.com/new\n"+
-				"- Push to remote Git repository: $ git push -u origin %s\n"+
-				"- Start coding: $ nova .\n",
-				gitBranchName,
-			),
-			expectedErrorOutput: "",
-			expectedExitCode:    0,
-			expectedFiles: &file{"bar", dirPerms, nil, []file{
-				{"go.mod", filePerms, []byte("module github.com/foo/bar\n\ngo 1.18\n"), nil},
-				{"main.go", filePerms, []byte(mainGoContents), nil},
-				{".git", dirPerms, nil, nil},
-				{".gitignore", filePerms, []byte("bar"), nil},
-				{"README.md", filePerms, []byte("# bar\n\n"), nil},
-				{".nova", dirPerms, nil, []file{
-					{"Tasks", dirPerms, nil, []file{
-						{"Go.json", filePerms, []byte(novaTaskContents), nil},
-					}},
-				}},
-			}},
-			expectedGitRepo: &gitRepo{
-				"bar",
-				gitBranchName,
-				[]string{"Initial commit"},
-				ptr("git@github.com:foo/bar.git"),
-			},
-		},
-		{
-			args:                []string{"-q", "-g", "-n", "github.com/foo/bar"},
-			expectedOutput:      "",
-			expectedErrorOutput: "",
-			expectedExitCode:    0,
-			expectedFiles: &file{"bar", dirPerms, nil, []file{
-				{"go.mod", filePerms, []byte("module github.com/foo/bar\n\ngo 1.18\n"), nil},
-				{"main.go", filePerms, []byte(mainGoContents), nil},
-				{".git", dirPerms, nil, nil},
-				{".gitignore", filePerms, []byte("bar"), nil},
-				{"README.md", filePerms, []byte("# bar\n\n"), nil},
-				{".nova", dirPerms, nil, []file{
-					{"Tasks", dirPerms, nil, []file{
-						{"Go.json", filePerms, []byte(novaTaskContents), nil},
-					}},
-				}},
-			}},
-			expectedGitRepo: &gitRepo{
-				"bar",
-				gitBranchName,
-				[]string{"Initial commit"},
-				ptr("git@github.com:foo/bar.git"),
-			},
-		},
-		{
-			args: []string{"--git", "--nova", "foo"},
-			expectedOutput: fmt.Sprintf("Creating Go module: foo\n"+
-				"- Created directory: foo\n"+
-				"- Initialized Go module\n"+
-				"- Created file     : foo/main.go\n"+
-				"- Created directory: foo/.nova\n"+
-				"- Created directory: foo/.nova/Tasks\n"+
-				"- Created file     : foo/.nova/Tasks/Go.json\n"+
-				"- Initialized Git repository\n"+
-				"- Created file     : foo/.gitignore\n"+
-				"- Created file     : foo/README.md\n"+
-				"- Committed all files to Git repository\n"+
-				"- NOTE: Unable to add remote for Git repository\n"+
-				"\n"+
-				"Finished creating Go module: foo\n"+
-				"\n"+
-				"Next steps:\n"+
-				"- Change into your module's directory: $ cd foo\n"+
-				"- Run your module: $ go run .\n"+
-				"- Create remote Git repository\n"+
-				"- Push to remote Git repository: $ git push -u origin %s\n"+
-				"- Start coding: $ nova .\n",
-				gitBranchName,
-			),
-			expectedErrorOutput: "",
-			expectedExitCode:    0,
-			expectedFiles: &file{"foo", dirPerms, nil, []file{
-				{"go.mod", filePerms, []byte("module foo\n\ngo 1.18\n"), nil},
-				{"main.go", filePerms, []byte(mainGoContents), nil},
-				{".git", dirPerms, nil, nil},
-				{".gitignore", filePerms, []byte("foo"), nil},
-				{"README.md", filePerms, []byte("# foo\n\n"), nil},
-				{".nova", dirPerms, nil, []file{
-					{"Tasks", dirPerms, nil, []file{
-						{"Go.json", filePerms, []byte(novaTaskContents), nil},
-					}},
-				}},
-			}},
-			expectedGitRepo: &gitRepo{
-				"foo",
-				gitBranchName,
-				[]string{"Initial commit"},
-				nil,
-			},
-		},
-		{
-			args: []string{"--git", "--nova", "example.com/foo/bar"},
-			expectedOutput: fmt.Sprintf("Creating Go module: example.com/foo/bar\n"+
-				"- Created directory: bar\n"+
-				"- Initialized Go module\n"+
-				"- Created file     : bar/main.go\n"+
-				"- Created directory: bar/.nova\n"+
-				"- Created directory: bar/.nova/Tasks\n"+
-				"- Created file     : bar/.nova/Tasks/Go.json\n"+
-				"- Initialized Git repository\n"+
-				"- Created file     : bar/.gitignore\n"+
-				"- Created file     : bar/README.md\n"+
-				"- Committed all files to Git repository\n"+
-				"- Added remote for Git repository: git@example.com:foo/bar.git\n"+
-				"\n"+
-				"Finished creating Go module: example.com/foo/bar\n"+
-				"\n"+
-				"Next steps:\n"+
-				"- Change into your module's directory: $ cd bar\n"+
-				"- Run your module: $ go run .\n"+
-				"- Create remote Git repository git@example.com:foo/bar.git\n"+
-				"- Push to remote Git repository: $ git push -u origin %s\n"+
-				"- Start coding: $ nova .\n",
-				gitBranchName,
-			),
-			expectedErrorOutput: "",
-			expectedExitCode:    0,
-			expectedFiles: &file{"bar", dirPerms, nil, []file{
-				{"go.mod", filePerms, []byte("module example.com/foo/bar\n\ngo 1.18\n"), nil},
-				{"main.go", filePerms, []byte(mainGoContents), nil},
-				{".git", dirPerms, nil, nil},
-				{".gitignore", filePerms, []byte("bar"), nil},
-				{"README.md", filePerms, []byte("# bar\n\n"), nil},
-				{".nova", dirPerms, nil, []file{
-					{"Tasks", dirPerms, nil, []file{
-						{"Go.json", filePerms, []byte(novaTaskContents), nil},
-					}},
-				}},
-			}},
-			expectedGitRepo: &gitRepo{
-				"bar",
-				gitBranchName,
-				[]string{"Initial commit"},
-				ptr("git@example.com:foo/bar.git"),
 			},
 		},
 	}
