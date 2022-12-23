@@ -29,6 +29,7 @@ var helpOutput string = fmt.Sprintf("NAME:\n"+
 	"   `%s [module name]` creates a directory containing:\n"+
 	"   - Go module metadata: go.mod\n"+
 	"   - A place to start writing code: main.go\n"+
+	"   - A .gitignore file\n"+
 	"   \n"+
 	"   This module can be immediately run:\n"+
 	"   \n"+
@@ -198,6 +199,7 @@ func TestRun(t *testing.T) {
 				"- Created directory: a1\n"+
 				"- Initialized Go module\n"+
 				"- Created file     : a1/main.go\n"+
+				"- Created file     : a1/.gitignore\n"+
 				"\n"+
 				"Finished creating Go module: a1\n"+
 				"\n"+
@@ -211,6 +213,7 @@ func TestRun(t *testing.T) {
 			expectedFiles: &file{"a1", dirPerms, nil, []file{
 				{"go.mod", filePerms, []byte("module a1\n\ngo 1.18\n"), nil},
 				{"main.go", filePerms, []byte(mainGoContents), nil},
+				{".gitignore", filePerms, []byte("a1"), nil},
 			}},
 			expectedGitRepo: nil,
 		},
@@ -220,6 +223,7 @@ func TestRun(t *testing.T) {
 				"- Created directory: foo\n"+
 				"- Initialized Go module\n"+
 				"- Created file     : foo/main.go\n"+
+				"- Created file     : foo/.gitignore\n"+
 				"\n"+
 				"Finished creating Go module: github.com/foo\n"+
 				"\n"+
@@ -233,6 +237,7 @@ func TestRun(t *testing.T) {
 			expectedFiles: &file{"foo", dirPerms, nil, []file{
 				{"go.mod", filePerms, []byte("module github.com/foo\n\ngo 1.18\n"), nil},
 				{"main.go", filePerms, []byte(mainGoContents), nil},
+				{".gitignore", filePerms, []byte("foo"), nil},
 			}},
 			expectedGitRepo: nil,
 		},
@@ -242,8 +247,8 @@ func TestRun(t *testing.T) {
 				"- Created directory: bar\n"+
 				"- Initialized Go module\n"+
 				"- Created file     : bar/main.go\n"+
-				"- Initialized Git repository\n"+
 				"- Created file     : bar/.gitignore\n"+
+				"- Initialized Git repository\n"+
 				"- Created file     : bar/README.md\n"+
 				"- Committed all files to Git repository\n"+
 				"- Added remote for Git repository: git@github.com:foo/bar.git\n"+
@@ -280,8 +285,8 @@ func TestRun(t *testing.T) {
 				"- Created directory: bar\n"+
 				"- Initialized Go module\n"+
 				"- Created file     : bar/main.go\n"+
-				"- Initialized Git repository\n"+
 				"- Created file     : bar/.gitignore\n"+
+				"- Initialized Git repository\n"+
 				"- Created file     : bar/README.md\n"+
 				"- Committed all files to Git repository\n"+
 				"- Added remote for Git repository: git@github.com:foo/bar.git\n"+

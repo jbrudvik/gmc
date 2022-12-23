@@ -24,6 +24,7 @@ const Url string = "https://github.com/jbrudvik/" + Name
 const Description string = "`" + Name + " [module name]` creates a directory containing:\n" +
 	"- Go module metadata: go.mod\n" +
 	"- A place to start writing code: main.go\n" +
+	"- A .gitignore file\n" +
 	"\n" +
 	"This module can be immediately run:\n" +
 	"\n" +
@@ -172,6 +173,15 @@ func createModule(module string, repo *gitRepo, extraDirs []string, output io.Wr
 		}
 	}
 
+	// Create .gitignore
+	gitignoreFilePath := filepath.Join(moduleBase, gitignoreFileName)
+	err = os.WriteFile(gitignoreFilePath, []byte(moduleBase), 0644)
+	if err != nil {
+		errorMessage := fmt.Sprintf("Failed to create .gitignore file: %s", err.Error())
+		return errors.New(errorMessage)
+	}
+	reportCreatedFile(output, quiet, gitignoreFilePath)
+
 	// Set up Git repo
 	if repo != nil {
 		err, gitRepoNextSteps := setUpGitRepo(repo, module, moduleBase, output, quiet)
@@ -285,14 +295,6 @@ func setUpGitRepo(repo *gitRepo, module string, moduleBase string, output io.Wri
 		return errors.New("Failed to initialize Git repository"), nil
 	}
 	flogln(output, quiet, "- Initialized Git repository")
-
-	// Create .gitignore
-	gitignoreFilePath := filepath.Join(moduleBase, gitignoreFileName)
-	err = os.WriteFile(gitignoreFilePath, []byte(moduleBase), 0644)
-	if err != nil {
-		return err, nil
-	}
-	reportCreatedFile(output, quiet, gitignoreFilePath)
 
 	// Create README.md (with title)
 	readmeFilePath := filepath.Join(moduleBase, readmeFileName)

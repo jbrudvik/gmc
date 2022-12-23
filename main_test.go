@@ -24,6 +24,7 @@ const helpOutput string = "NAME:\n" +
 	"   `gmc [module name]` creates a directory containing:\n" +
 	"   - Go module metadata: go.mod\n" +
 	"   - A place to start writing code: main.go\n" +
+	"   - A .gitignore file\n" +
 	"   \n" +
 	"   This module can be immediately run:\n" +
 	"   \n" +

@@ -14,8 +14,8 @@ Creating Go module: github.com/jbrudvik/mymodule
 - Created directory: mymodule
 - Initialized Go module
 - Created file     : mymodule/main.go
-- Initialized Git repository
 - Created file     : mymodule/.gitignore
+- Initialized Git repository
 - Created file     : mymodule/README.md
 - Committed all files to Git repository
 - Added remote for Git repository: git@github.com:jbrudvik/mymodule.git
@@ -47,6 +47,7 @@ DESCRIPTION:
    `gmc [module name]` creates a directory containing:
    - Go module metadata: go.mod
    - A place to start writing code: main.go
+   - A .gitignore file
 
    This module can be immediately run:
 
