@@ -17,7 +17,7 @@ const editor string = "vim"
 const gitBranchName string = "main"
 
 var helpOutput string = fmt.Sprintf("NAME:\n"+
-	"   %s - (Go mod create) creates Go modules so you can start coding ASAP\n"+
+	"   %s - (Go mod create) creates Go modules\n"+
 	"\n"+
 	"USAGE:\n"+
 	"   %s [global options] [module name]\n"+

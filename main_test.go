@@ -12,7 +12,7 @@ import (
 
 const executableName string = "gmc"
 const helpOutput string = "NAME:\n" +
-	"   gmc - (Go mod create) creates Go modules so you can start coding ASAP\n" +
+	"   gmc - (Go mod create) creates Go modules\n" +
 	"\n" +
 	"USAGE:\n" +
 	"   gmc [global options] [module name]\n" +

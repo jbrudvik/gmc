@@ -63,7 +63,7 @@ func AppWithCustomOutput(output io.Writer, errorOutput io.Writer) *cli.App {
 func AppWithCustomEverything(output io.Writer, errorOutput io.Writer, exitCodeHandler func(int), gitInitialBranch *string) *cli.App {
 	return &cli.App{
 		Name:        Name,
-		Usage:       "(Go mod create) creates Go modules so you can start coding ASAP",
+		Usage:       "(Go mod create) creates Go modules",
 		Version:     Version,
 		Description: Description,
 		Writer:      output,
