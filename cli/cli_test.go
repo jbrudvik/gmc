@@ -204,8 +204,8 @@ func TestRun(t *testing.T) {
 				"Finished creating Go module: a1\n"+
 				"\n"+
 				"Next steps:\n"+
-				"- Change into your module's directory: $ cd a1\n"+
-				"- Run your module: $ go run .\n"+
+				"- Change into module's directory: $ cd a1\n"+
+				"- Run module: $ go run .\n"+
 				"- Start coding: $ %s .\n",
 				editor),
 			expectedErrorOutput: "",
@@ -228,8 +228,8 @@ func TestRun(t *testing.T) {
 				"Finished creating Go module: github.com/foo\n"+
 				"\n"+
 				"Next steps:\n"+
-				"- Change into your module's directory: $ cd foo\n"+
-				"- Run your module: $ go run .\n"+
+				"- Change into module's directory: $ cd foo\n"+
+				"- Run module: $ go run .\n"+
 				"- Start coding: $ %s .\n",
 				editor),
 			expectedErrorOutput: "",
@@ -256,8 +256,8 @@ func TestRun(t *testing.T) {
 				"Finished creating Go module: github.com/foo/bar\n"+
 				"\n"+
 				"Next steps:\n"+
-				"- Change into your module's directory: $ cd bar\n"+
-				"- Run your module: $ go run .\n"+
+				"- Change into module's directory: $ cd bar\n"+
+				"- Run module: $ go run .\n"+
 				"- Create remote Git repository git@github.com:foo/bar.git: https://github.com/new\n"+
 				"- Push to remote Git repository: $ git push -u origin %s\n"+
 				"- Start coding: $ %s .\n",
@@ -294,8 +294,8 @@ func TestRun(t *testing.T) {
 				"Finished creating Go module: github.com/foo/bar\n"+
 				"\n"+
 				"Next steps:\n"+
-				"- Change into your module's directory: $ cd bar\n"+
-				"- Run your module: $ go run .\n"+
+				"- Change into module's directory: $ cd bar\n"+
+				"- Run module: $ go run .\n"+
 				"- Create remote Git repository git@github.com:foo/bar.git: https://github.com/new\n"+
 				"- Push to remote Git repository: $ git push -u origin %s\n"+
 				"- Start coding: $ %s .\n",

@@ -162,8 +162,8 @@ func createModule(module string, repo *gitRepo, extraDirs []string, output io.Wr
 		return err
 	}
 
-	nextSteps = append(nextSteps, fmt.Sprintf("Change into your module's directory: $ cd %s", moduleBase))
-	nextSteps = append(nextSteps, "Run your module: $ go run .")
+	nextSteps = append(nextSteps, fmt.Sprintf("Change into module's directory: $ cd %s", moduleBase))
+	nextSteps = append(nextSteps, "Run module: $ go run .")
 
 	// Copy over extras
 	for _, extraDir := range extraDirs {
